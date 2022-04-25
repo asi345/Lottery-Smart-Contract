@@ -28,7 +28,7 @@ for each address, a ticket list, linked list or array
     address payable[] public users;
     mapping(address => uint256) public balances;
     ERC20 public token;
-    Ticket[] public tickets;
+    mapping(uint256 => Ticket) public tickets;
     uint256 public ticketCounter;
 
 
@@ -59,15 +59,16 @@ for each address, a ticket list, linked list or array
     function buyTicket(bytes32 hash_rnd_number) public {
         require(balances[msg.sender] >= 10, "Not enough TL in the account");
         balances[msg.sender] -= 10;
-        Ticket curTicket = new Ticket(ticketCounter);
-        tickets.push(curTicket);
-        //curTicket.transferFrom(from, to, tokenId);
+        Ticket curTicket = new Ticket(ticketCounter, msg.sender, hash_rnd_number);
+        tickets[ticketCounter] = curTicket;
         ticketCounter += 1;
-
     }
+
     // does not implement an actual transfer, just update the user's account balance
     function collectTicketRefund(uint ticket_no) public {
-
+        require(ticket_no <= ticketCounter, "Ticket does not exist");
+        Ticket refunded = tickets[ticket_no];
+        balances[refunded.ownerOf(ticket_no)] += 5;
     }
 
     function revealRndNumber(uint ticketno, uint rnd_number) public {

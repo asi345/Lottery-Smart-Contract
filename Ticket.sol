@@ -7,8 +7,12 @@ import "../openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 contract Ticket is ERC721 {
 
     uint256 public ticketNo;
+    bytes32 public hash_rnd_number;
 
-    constructor(uint256 _ticketNo) ERC721("Ticket", "TCK") {
+    constructor(uint256 _ticketNo, address owner, bytes32 _hash_rnd_number) ERC721("Ticket", "TCK") {
         ticketNo = _ticketNo;
+        hash_rnd_number = _hash_rnd_number;
+        _mint(owner, ticketNo);
+        //_mint(owner, hash_rnd_number);
     }
 }
