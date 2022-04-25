@@ -3,6 +3,7 @@
 pragma solidity >=0.7.0 <0.9.0;
 
 import "../openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import "./Ticket.sol";
 
 contract Lottery {
 
@@ -25,9 +26,16 @@ for each address, a ticket list, linked list or array
 */
     address public admin;
     address payable[] public users;
+    mapping(address => uint256) public balances;
+    ERC20 public token;
+    Ticket[] public tickets;
+    uint256 public ticketCounter;
+
 
     constructor() public {
         admin = msg.sender;
+        token = new ERC20("Turk Lirasi", "TL");
+        ticketCounter = 0;
     }
 
     fallback() external {
@@ -35,14 +43,26 @@ for each address, a ticket list, linked list or array
     }
 
     function depositTL(uint amnt) public {
-
+        //require(amnt <= token.balanceOf(msg.sender)); token implement etmis sanirim
+        if (token.transferFrom(msg.sender, address(this), amnt)) {
+            balances[msg.sender] += amnt;
+        }
     }
 
     function withdrawTL(uint amnt) public {
-
+        require(amnt <= balances[msg.sender], "Not enough TL in the account");
+        if (token.transferFrom(address(this), msg.sender, amnt)) {
+            balances[msg.sender] -= amnt;
+        }
     }
 
     function buyTicket(bytes32 hash_rnd_number) public {
+        require(balances[msg.sender] >= 10, "Not enough TL in the account");
+        balances[msg.sender] -= 10;
+        Ticket curTicket = new Ticket(ticketCounter);
+        tickets.push(curTicket);
+        //curTicket.transferFrom(from, to, tokenId);
+        ticketCounter += 1;
 
     }
     // does not implement an actual transfer, just update the user's account balance
