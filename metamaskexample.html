@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Browser Transactions</title>
+  <script src="https://unpkg.com/@metamask/legacy-web3@latest/dist/metamask.web3.min.js"></script> 
+  <script>
+      
+     window.addEventListener('load', function() {
+       var web3 = window.web3 ; 
+
+       if (typeof web3 !== 'undefined') {
+         // Use Mist/MetaMask's provider
+        web3js = new Web3(web3.currentProvider);
+       } else {
+        console.log('No web3? You should consider trying MetaMask!')
+        // fallback - use your fallback strategy (local node / hosted node + in-dapp id mgmt / fail)
+        web3js = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+      }
+     } ) ; 
+
+    function getaddrbalance() {
+        var fromaddr = document.getElementById("fromaddr").value ; 
+        rc = web3js.eth.getBalance(fromaddr,function(error, result){
+                if(!error) {
+                   var stat = JSON.stringify(result);
+                   document.getElementById("status").innerHTML = "Balance:" + stat ;
+                }
+                else {
+                   console.error(error);
+                }
+            }) ; 
+        
+    }
+  </script>
+</head>
+<body>
+
+<h1>Browser Transactions</h1>
+
+<form>
+<p> Addr: <textarea id="fromaddr" rows="1" cols="100"></textarea> </p>
+</form>
+
+<p>When you click "Call", balance of the address will be retrieved.</p>
+
+<button onclick="getaddrbalance()">Get Balance</button>
+
+<p id="status"></p>
+
+</body>
+</html>
