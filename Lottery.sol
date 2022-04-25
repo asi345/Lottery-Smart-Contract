@@ -28,14 +28,16 @@ for each address, a ticket list, linked list or array
     address payable[] public users;
     mapping(address => uint256) public balances;
     ERC20 public token;
-    mapping(uint256 => Ticket) public tickets;
+    mapping(uint256 => Ticket) public ticketsFromNo;
+    mapping(uint256 => mapping(address => Ticket[])) public ticketsFromLottery;
     uint256 public ticketCounter;
-
+    uint256 start;
 
     constructor() public {
         admin = msg.sender;
         token = new ERC20("Turk Lirasi", "TL");
         ticketCounter = 0;
+        start = block.timestamp;
     }
 
     fallback() external {
@@ -44,6 +46,7 @@ for each address, a ticket list, linked list or array
 
     function depositTL(uint amnt) public {
         //require(amnt <= token.balanceOf(msg.sender)); token implement etmis sanirim
+        token.approve(msg.sender, amnt);
         if (token.transferFrom(msg.sender, address(this), amnt)) {
             balances[msg.sender] += amnt;
         }
@@ -60,19 +63,20 @@ for each address, a ticket list, linked list or array
         require(balances[msg.sender] >= 10, "Not enough TL in the account");
         balances[msg.sender] -= 10;
         Ticket curTicket = new Ticket(ticketCounter, msg.sender, hash_rnd_number);
-        tickets[ticketCounter] = curTicket;
+        ticketsFromNo[ticketCounter] = curTicket;
+        ticketsFromLottery[getLotteryNo((block.timestamp - start) / (60 * 60 * 24 * 7))][msg.sender].push(curTicket);
         ticketCounter += 1;
     }
 
     // does not implement an actual transfer, just update the user's account balance
     function collectTicketRefund(uint ticket_no) public {
         require(ticket_no <= ticketCounter, "Ticket does not exist");
-        Ticket refunded = tickets[ticket_no];
+        Ticket refunded = ticketsFromNo[ticket_no];
         balances[refunded.ownerOf(ticket_no)] += 5;
     }
 
     function revealRndNumber(uint ticketno, uint rnd_number) public {
-
+        
     }
     // last bought ticket for a specific person, status - for example someone has bought a ticket
     // but did not reveal it and it has been cancelled, or if the ticket has been transferred to
@@ -82,7 +86,7 @@ for each address, a ticket list, linked list or array
     }
     // again, for a specific person
     function getIthOwnedTicketNo(uint i, uint lottery_no) public view returns(uint, uint8 status) {
-
+        return (ticketsFromLottery[lottery_no][msg.sender][i].ticketNo, ticketsFromLottery[lottery_no][msg.sender][i].status);
     }
 
     function checkIfTicketWon(uint ticket_no) public view returns (uint amount) {
