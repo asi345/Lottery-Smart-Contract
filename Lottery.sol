@@ -7,6 +7,9 @@ import "./Ticket.sol";
 
 contract Lottery {
 
+
+    //mybalance function should also be implemented  hoca öyle demiş
+
 /*
 users will provide the random numbers
 for winning number, we will xor or get mean of them, just manipulate the given ones
@@ -52,6 +55,7 @@ for each address, a ticket list, linked list or array
         }
     }
 
+    
     function withdrawTL(uint amnt) public {
         require(amnt <= balances[msg.sender], "Not enough TL in the account");
         if (token.transferFrom(address(this), msg.sender, amnt)) {
@@ -60,6 +64,8 @@ for each address, a ticket list, linked list or array
     }
 
     function buyTicket(bytes32 hash_rnd_number) public {
+
+        //we also need to check that current time is in the first 4 days of the lottery, otherwise, users should not not be able to buy tickets
         require(balances[msg.sender] >= 10, "Not enough TL in the account");
         balances[msg.sender] -= 10;
         Ticket curTicket = new Ticket(ticketCounter, msg.sender, hash_rnd_number);
@@ -69,6 +75,7 @@ for each address, a ticket list, linked list or array
     }
 
     // does not implement an actual transfer, just update the user's account balance
+    //suppose user got a ticket but did not reveal the rnd number during the reveal phase, then this refund will be applied
     function collectTicketRefund(uint ticket_no) public {
         require(ticket_no <= ticketCounter, "Ticket does not exist");
         Ticket refunded = ticketsFromNo[ticket_no];
@@ -93,6 +100,7 @@ for each address, a ticket list, linked list or array
 
     }
 
+//here, the money earned by the lottery can be withdrawn after the lottery ends, not during the lottery period
     function collectTicketPrize(uint ticket_no) public {
 
     }
