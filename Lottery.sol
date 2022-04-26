@@ -82,9 +82,13 @@ for each address, a ticket list, linked list or array
         balances[refunded.ownerOf(ticket_no)] += 5;
     }
 
+
+    //random number is revealed by users in reveal phase, be careful, do not reveal the hash
     function revealRndNumber(uint ticketno, uint rnd_number) public {
         
     }
+
+
     // last bought ticket for a specific person, status - for example someone has bought a ticket
     // but did not reveal it and it has been cancelled, or if the ticket has been transferred to
     // someone else, it can be 'no longer owned', don't delete the tickets until the lottery ends
