@@ -2,7 +2,7 @@
 
 pragma solidity >=0.7.0 <0.9.0;
 
-import "../openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import "./TL.sol";
 import "./Ticket.sol";
 
 contract Lottery {
@@ -24,18 +24,29 @@ tokens should only be transferred(unless needed) in deposit and withdraw functio
 
 for each address, a ticket list, linked list or array
 */
+    // people
     address public admin;
     address payable[] public users;
+
+    // payment
+    TL public token;
     mapping(address => uint256) public balances;
-    ERC20 public token;
+    uint256[] public totalSupplies;
+
+    // tickets
+    uint256 public ticketCounter;
     mapping(uint256 => Ticket) public ticketsFromNo;
     mapping(uint256 => mapping(address => Ticket[])) public ticketsFromLottery;
-    uint256 public ticketCounter;
+
+    // time
     uint256 start;
+
+    // random numbers
+    uint256[] public randomNumbers;
 
     constructor() public {
         admin = msg.sender;
-        token = new ERC20("Turk Lirasi", "TL");
+        token = new TL(10000000000000000000);
         ticketCounter = 0;
         start = block.timestamp;
     }
@@ -86,7 +97,7 @@ for each address, a ticket list, linked list or array
     }
     // again, for a specific person
     function getIthOwnedTicketNo(uint i, uint lottery_no) public view returns(uint, uint8 status) {
-        return (ticketsFromLottery[lottery_no][msg.sender][i].ticketNo, ticketsFromLottery[lottery_no][msg.sender][i].status);
+        //return (ticketsFromLottery[lottery_no][msg.sender][i].ticketNo, ticketsFromLottery[lottery_no][msg.sender][i].status);
     }
 
     function checkIfTicketWon(uint ticket_no) public view returns (uint amount) {
