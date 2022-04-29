@@ -36,7 +36,7 @@ for each address, a ticket list, linked list or array
     // payment
     TL public token;
     mapping(address => uint256) public balances;
-    uint256[] public totalSupplies; //indexed by lottery_no
+    uint256[] public totalSupplies; // indexed by lottery_no
 
     // tickets
     uint256 public ticketCounter;
@@ -48,11 +48,11 @@ for each address, a ticket list, linked list or array
 
     // random numbers
     uint256[] public randomNumbers;
-    mapping(uint256 => uint256) ticketsFromRandoms; // maps to ticket_no
+    mapping(uint256 => uint256) public ticketsFromRandoms; // maps to ticket_no
     // Ticket buyuk bir yapi, her lotteryde bir suru ticket eklencek ticketnoya maplemek mantikli geldi
     uint256[] public winningTickets; // ticket_nos of winning tickets, bunu basta lottery_no ile indexleyip
-    // iki boyutlu yapmak lazim gibi, cunku getIthWinningTicket fonksiyonu lottery_no da aliyor
-    // ama her lottery bittiginde yeni index eklemek lazim
+    // iki boyutlu yapmak lazim gibi, cunku getIthWinningTicket fonksiyonu lottery_no da aliyor, ve
+    // her lottery bittiginde yeni index eklemek lazim
 
     constructor() public {
         admin = msg.sender;
@@ -114,7 +114,6 @@ for each address, a ticket list, linked list or array
     function revealRndNumber(uint ticketno, uint rnd_number) public {
         require(ticketno <= ticketCounter, "Ticket does not exist");
         Ticket ticket = ticketsFromNo[ticketno];
-        // require(ticket.status == 0, "Ticket is not purchased"); boyle bir sey gerekebilir
         require(ticket.status() == 0, "Ticket is already revealed or cancelled");
         if (ticket.getHash_rnd_number() == keccak256(abi.encodePacked(rnd_number))) {
             randomNumbers.push(rnd_number);
@@ -137,9 +136,9 @@ for each address, a ticket list, linked list or array
 
     // again, for a specific person
     function getIthOwnedTicketNo(uint i, uint lottery_no) public view returns(uint, uint8 status) {
-        require(i < ticketsFromLottery[lottery_no][msg.sender].length, "Ticket index out of bounds");
-        return (ticketsFromLottery[lottery_no][msg.sender][i].getTicketNo(),
-            ticketsFromLottery[lottery_no][msg.sender][i].status());
+        require(i > 0 && i <= ticketsFromLottery[lottery_no][msg.sender].length, "Ticket index out of bounds");
+        return (ticketsFromLottery[lottery_no][msg.sender][i - 1].getTicketNo(),
+            ticketsFromLottery[lottery_no][msg.sender][i - 1].status());
     }
 
     // bunu bence biz ekleyelim
@@ -158,7 +157,7 @@ for each address, a ticket list, linked list or array
         // favors mapping ticket => i where i is ith winning
         for (uint i = 0; i < winningTickets.length; i++) {
             if (winningTickets[i] == ticket_no) {
-                // altta bence son indexi versek okey ama yoksa getTotalLoetteryMoneyCollected kullanalim mi bir bak
+                // altta son index yerine getTotalLotteryMoneyCollected kullanabiliriz bir bak
                 return calculatePrize(i + 1, totalSupplies[totalSupplies.length - 1]);
             }
         }
