@@ -176,7 +176,7 @@ for each address, a ticket list, linked list or array
         require(i > 0, "Ticket index out of bounds");
         // log implement etmek lazim pure function olarak
         //require(i <= log(totalSupplies[getTotalLotteryMoneyCollected(lottery_no)]) + 1, "Ticket index out of bounds");
-        return (winningTickets[i], checkIfTicketWon(winningTickets[i]));
+        return (winningTickets[i - 1], checkIfTicketWon(winningTickets[i - 1]));
     }
     
     function getLotteryNo(uint unixtimeinweek) public view returns (uint lottery_no) {
