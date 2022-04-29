@@ -47,12 +47,13 @@ for each address, a ticket list, linked list or array
     uint256 start;
 
     // random numbers
-    uint256[] public randomNumbers;
-    mapping(uint256 => uint256) public ticketsFromRandoms; // maps to ticket_no
+    uint256[] public randomNumbers;    //bunu lottery bitişlerinde boşaltmak lazım
+    mapping( uint => mapping(uint256 => uint256)) public ticketsFromRandoms; // maps to ticket_no //bunu lottery no ile nested yapmak gerekebilir, bu durumda ticketta lottery no da tutmak gerekecek
     // Ticket buyuk bir yapi, her lotteryde bir suru ticket eklencek ticketnoya maplemek mantikli geldi
-    uint256[] public winningTickets; // ticket_nos of winning tickets, bunu basta lottery_no ile indexleyip
+    mapping(uint => uint256[]) public winningTickets; // ticket_nos of winning tickets, bunu basta lottery_no ile indexleyip
     // iki boyutlu yapmak lazim gibi, cunku getIthWinningTicket fonksiyonu lottery_no da aliyor, ve
     // her lottery bittiginde yeni index eklemek lazim
+    //tam bunu yazacaktım bro aynen ama bunu yaparsak ticket no dan lottery no ya erişebilmemiz de gerekecek.
 
     constructor() public {
         admin = msg.sender;
@@ -89,9 +90,10 @@ for each address, a ticket list, linked list or array
         //we also need to check that current time is in the first 4 days of the lottery, otherwise, users should not not be able to buy tickets
         require(balances[msg.sender] >= 10, "Not enough TL in the account");
         balances[msg.sender] -= 10;
-        Ticket curTicket = new Ticket(ticketCounter, msg.sender, hash_rnd_number);
+        uint lotteryNo = getLotteryNo((block.timestamp - start) / (60 * 60 * 24 * 7));
+        Ticket curTicket = new Ticket(ticketCounter, msg.sender, hash_rnd_number, lotteryNo);
         ticketsFromNo[ticketCounter] = curTicket;
-        ticketsFromLottery[getLotteryNo((block.timestamp - start) / (60 * 60 * 24 * 7))][msg.sender].push(curTicket);
+        ticketsFromLottery[lotteryNo][msg.sender].push(curTicket); //bu arrayin başta initialize edilmesi lazım mı?
         ticketCounter += 1;
         //lottery period bittiginde yeni index acilmali burada, time bakarken dikkat et
         totalSupplies[totalSupplies.length - 1] += 10;
@@ -114,13 +116,14 @@ for each address, a ticket list, linked list or array
     function revealRndNumber(uint ticketno, uint rnd_number) public {
         require(ticketno <= ticketCounter, "Ticket does not exist");
         Ticket ticket = ticketsFromNo[ticketno];
+        uint lotteryNo = ticket.getLotteryNo();
         require(ticket.status() == 0, "Ticket is already revealed or cancelled");
         if (ticket.getHash_rnd_number() == keccak256(abi.encodePacked(rnd_number))) {
             randomNumbers.push(rnd_number);
-            ticketsFromRandoms[rnd_number] = ticketno;
+            ticketsFromRandoms[lotteryNo][rnd_number] = ticketno;
             ticket.setStatus(3);
         } else {
-            ticket.setStatus(1);
+            ticket.setStatus(1);   //hash tutmayınca cancelled demek doğru mu?, adam bu fonksiyonu hiç çağırmazsa da cancelled yapmamız gerekecek
         }
     }
 
@@ -130,6 +133,7 @@ for each address, a ticket list, linked list or array
     // someone else, it can be 'no longer owned', don't delete the tickets until the lottery ends
     function getLastOwnedTicketNo(uint lottery_no) public view returns(uint, uint8 status) {
         uint i = ticketsFromLottery[lottery_no][msg.sender].length - 1;
+        require(i >= 0, "No ticket bought");
         return (ticketsFromLottery[lottery_no][msg.sender][i].getTicketNo(),
             ticketsFromLottery[lottery_no][msg.sender][i].status());
     }
@@ -155,9 +159,11 @@ for each address, a ticket list, linked list or array
     // hoca winning ticketlar uzerinde looplayabilirsiniz cunku nasil olsa log M kadar baya kucuk demisti
     function checkIfTicketWon(uint ticket_no) public view returns (uint amount) {
         // favors mapping ticket => i where i is ith winning
-        for (uint i = 0; i < winningTickets.length; i++) {
-            if (winningTickets[i] == ticket_no) {
-                // altta son index yerine getTotalLotteryMoneyCollected kullanabiliriz bir bak
+        Ticket ticket = ticketsFromNo[ticket_no];
+        uint lotteryNo = ticket.getLotteryNo();
+        for (uint i = 0; i < winningTickets[lotteryNo].length; i++) {
+            if (winningTickets[lotteryNo][i] == ticket_no) {
+                // altta son index yerine getTotalLotteryMoneyCollected kullanabiliriz bir bak (o zaman lottery no yu da vermek gerekir?)
                 return calculatePrize(i + 1, totalSupplies[totalSupplies.length - 1]);
             }
         }
@@ -176,15 +182,28 @@ for each address, a ticket list, linked list or array
         require(i > 0, "Ticket index out of bounds");
         // log implement etmek lazim pure function olarak
         //require(i <= log(totalSupplies[getTotalLotteryMoneyCollected(lottery_no)]) + 1, "Ticket index out of bounds");
-        return (winningTickets[i - 1], checkIfTicketWon(winningTickets[i - 1]));
+        return (winningTickets[lottery_no][i - 1], checkIfTicketWon(winningTickets[lottery_no][i - 1]));
     }
     
     function getLotteryNo(uint unixtimeinweek) public view returns (uint lottery_no) {
-
+        return unixtimeinweek;   //if 5 weeks is given as time, then return 5 as the lottery number?
     }
 
     function getTotalLotteryMoneyCollected(uint lottery_no) public view returns (uint amount) {
         return totalSupplies[lottery_no];
+    }
+
+    function resetLottery(uint lottery_no) public {
+        // when the 7 day period ends, the state variables should be reset
+        uint time_in_week = (block.timestamp - start) / (60 * 60 * 24 * 7);
+        uint currentLottery = getLotteryNo(time_in_week);
+        require(lottery_no != currentLottery, "Lottery should not be resetted");
+        totalSupplies.push(0);
+        randomNumbers = new uint[](0);
+        winningTickets[currentLottery] = new uint[](0); 
+        //ticketsFromRandoms[currentLottery] = new mapping(uint256 => uint256);  initiate edilmiyor böyle galiba?
+
+
     }
     
 }

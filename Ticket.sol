@@ -17,12 +17,14 @@ contract Ticket is ERC721 {
     uint8 public status;
     // built inlerde karisiklik cikabilir gibi, sikerler kendimiz yazalim
     address private owner;
+    uint lotteryNo; //bu binding kurmak için gerekti
 
-    constructor(uint256 _ticketNo, address _owner, bytes32 _hash_rnd_number) ERC721("Ticket", "TCK") {
+    constructor(uint256 _ticketNo, address _owner, bytes32 _hash_rnd_number, uint _lotteryNo) ERC721("Ticket", "TCK") {
         ticketNo = _ticketNo;
         hash_rnd_number = _hash_rnd_number;
         status = 0;
         owner = _owner;
+        lotteryNo = _lotteryNo;
     }
 
     function getTicketNo() public view returns (uint256) {
@@ -35,6 +37,10 @@ contract Ticket is ERC721 {
 
     function getOwner() public view returns (address) {
         return owner;
+    }
+
+    function getLotteryNo() public view returns (uint) {
+        return lotteryNo;
     }
 
     function setStatus(uint8 _status) public {
