@@ -58,6 +58,10 @@ for each address, a ticket list, linked list or array
         revert();
     }
 
+    function getBalance() public view returns (uint256) {
+        return balances[msg.sender];
+    }
+
     function depositTL(uint amnt) public {
         //require(amnt <= token.balanceOf(msg.sender)); token implement etmis sanirim
         token.approve(msg.sender, amnt);
@@ -83,6 +87,7 @@ for each address, a ticket list, linked list or array
         ticketsFromNo[ticketCounter] = curTicket;
         ticketsFromLottery[getLotteryNo((block.timestamp - start) / (60 * 60 * 24 * 7))][msg.sender].push(curTicket);
         ticketCounter += 1;
+
     }
 
     // does not implement an actual transfer, just update the user's account balance
@@ -95,6 +100,9 @@ for each address, a ticket list, linked list or array
 
 
     //random number is revealed by users in reveal phase, be careful, do not reveal the hash
+    // if tickethash == hash(rnd_number), then add the random number with binding to the user for
+    // calculating the winner number, also ticket status should be valid
+    // else, ticket should be cancelled
     function revealRndNumber(uint ticketno, uint rnd_number) public {
         
     }
@@ -129,7 +137,7 @@ for each address, a ticket list, linked list or array
     }
 
     function getTotalLotteryMoneyCollected(uint lottery_no) public view returns (uint amount) {
-
+        return totalSupplies[lottery_no];
     }
     
 }
