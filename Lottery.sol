@@ -28,8 +28,6 @@ tokens should only be transferred(unless needed) in deposit and withdraw functio
 for each address, a ticket list, linked list or array
 
 // zamani simule etmek lazim, nasil bakalim
-// autonomous calismasi icin bu fonksiyonlari cagiran bir contract daha gerekebilir, cunku
-// biz manuel winner secme fonksiyonunu cagirmazsak nasil winner secilcek
 */
     // people
     address public admin;
