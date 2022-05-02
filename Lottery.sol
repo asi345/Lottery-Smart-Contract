@@ -7,9 +7,6 @@ import "./Ticket.sol";
 
 contract Lottery {
 
-
-    //mybalance function should also be implemented  hoca öyle demiş
-
 /*
 users will provide the random numbers
 for winning number, we will xor or get mean of them, just manipulate the given ones
@@ -28,6 +25,8 @@ tokens should only be transferred(unless needed) in deposit and withdraw functio
 for each address, a ticket list, linked list or array
 
 // zamani simule etmek lazim, nasil bakalim
+
+// require conditionlarini modifier olarak tanimlamak lazim
 */
     // people
     address public admin;
@@ -45,11 +44,12 @@ for each address, a ticket list, linked list or array
 
     // time
     uint256 start;
+    uint256 curLotStart;
+    address alarm;
 
     // random numbers
     uint256[] public randomNumbers;    //bunu lottery bitişlerinde boşaltmak lazım
-    mapping( uint => mapping(uint256 => uint256)) public ticketsFromRandoms; // maps to ticket_no //bunu lottery no ile nested yapmak gerekebilir, bu durumda ticketta lottery no da tutmak gerekecek
-    // Ticket buyuk bir yapi, her lotteryde bir suru ticket eklencek ticketnoya maplemek mantikli geldi
+    mapping(uint => mapping(uint256 => uint256)) public ticketsFromRandoms; // maps to ticket_no
     mapping(uint => uint256[]) public winningTickets; // ticket_nos of winning tickets, bunu basta lottery_no ile indexleyip
     // iki boyutlu yapmak lazim gibi, cunku getIthWinningTicket fonksiyonu lottery_no da aliyor, ve
     // her lottery bittiginde yeni index eklemek lazim
@@ -60,6 +60,7 @@ for each address, a ticket list, linked list or array
         token = new TL(10000000000000000000);
         ticketCounter = 0;
         start = block.timestamp;
+        resetLottery(); // reset lottery schedule edilirse sil
     }
 
     fallback() external {
@@ -71,9 +72,8 @@ for each address, a ticket list, linked list or array
     }
 
     function depositTL(uint amnt) public {
-        //require(amnt <= token.balanceOf(msg.sender)); token implement etmis sanirim
         token.approve(msg.sender, amnt);
-        if (token.transferFrom(msg.sender, address(this), amnt)) {
+        if (token.transfer(address(this), amnt)) {
             balances[msg.sender] += amnt;
         }
     }
@@ -81,28 +81,29 @@ for each address, a ticket list, linked list or array
     
     function withdrawTL(uint amnt) public {
         require(amnt <= balances[msg.sender], "Not enough TL in the account");
-        if (token.transferFrom(address(this), msg.sender, amnt)) {
+        token.approve(msg.sender, amnt);
+        if (token.send(address(this), msg.sender, amnt)) {
             balances[msg.sender] -= amnt;
         }
     }
 
     function buyTicket(bytes32 hash_rnd_number) public {
-        //we also need to check that current time is in the first 4 days of the lottery, otherwise, users should not not be able to buy tickets
+        require(block.timestamp - curLotStart < 4 days, "Lottery is not in purchase phase");
         require(balances[msg.sender] >= 10, "Not enough TL in the account");
         balances[msg.sender] -= 10;
-        uint lotteryNo = getLotteryNo((block.timestamp - start) / (60 * 60 * 24 * 7));
+        uint lotteryNo = getLotteryNo(block.timestamp / (1 weeks));
         Ticket curTicket = new Ticket(ticketCounter, msg.sender, hash_rnd_number, lotteryNo);
         ticketsFromNo[ticketCounter] = curTicket;
-        ticketsFromLottery[lotteryNo][msg.sender].push(curTicket); //bu arrayin başta initialize edilmesi lazım mı?
+        ticketsFromLottery[lotteryNo][msg.sender].push(curTicket);
         ticketCounter += 1;
-        //lottery period bittiginde yeni index acilmali burada, time bakarken dikkat et
         totalSupplies[totalSupplies.length - 1] += 10;
     }
 
     // does not implement an actual transfer, just update the user's account balance
     //suppose user got a ticket but did not reveal the rnd number during the reveal phase, then this refund will be applied
     function collectTicketRefund(uint ticket_no) public {
-        require(ticket_no <= ticketCounter, "Ticket does not exist");
+        require(getLotteryNo(block.timestamp / (1 weeks)) > ticketsFromNo[ticket_no].getLotteryNo(), "Lottery is not finished yet");
+        require(ticket_no < ticketCounter, "Ticket does not exist");
         require(ticketsFromNo[ticket_no].status() <= 1, "Ticket is not cancelled");
         Ticket refunded = ticketsFromNo[ticket_no];
         balances[refunded.getOwner()] += 5;
@@ -114,7 +115,9 @@ for each address, a ticket list, linked list or array
     // calculating the winner number, also ticket status should be valid
     // else, ticket should be cancelled (bunlar benim gorusum bro eksik varsa haber et)
     function revealRndNumber(uint ticketno, uint rnd_number) public {
-        require(ticketno <= ticketCounter, "Ticket does not exist");
+        require(getLotteryNo(block.timestamp / (1 weeks)) == ticketsFromNo[ticketno].getLotteryNo(), "Ticket is from other lottery");
+        require(block.timestamp - curLotStart >= 4 days, "Lottery is not in reveal phase");
+        require(ticketno < ticketCounter, "Ticket does not exist");
         Ticket ticket = ticketsFromNo[ticketno];
         uint lotteryNo = ticket.getLotteryNo();
         require(ticket.status() == 0, "Ticket is already revealed or cancelled");
@@ -138,11 +141,20 @@ for each address, a ticket list, linked list or array
             ticketsFromLottery[lottery_no][msg.sender][i].status());
     }
 
-    // again, for a specific person
     function getIthOwnedTicketNo(uint i, uint lottery_no) public view returns(uint, uint8 status) {
         require(i > 0 && i <= ticketsFromLottery[lottery_no][msg.sender].length, "Ticket index out of bounds");
         return (ticketsFromLottery[lottery_no][msg.sender][i - 1].getTicketNo(),
             ticketsFromLottery[lottery_no][msg.sender][i - 1].status());
+    }
+
+    function ceilLog2(uint num) public pure returns (uint) {
+        num -= 1;
+        uint log = 0;
+        while (num > 0) {
+            num >>= 1;
+            log += 1;
+        }
+        return log;
     }
 
     // bunu bence biz ekleyelim
@@ -150,6 +162,28 @@ for each address, a ticket list, linked list or array
         // uses randomNumbers array to select random indexes, then gets the random numbers at these
         // indexes. After it fills winningTickers array using ticketsFromRandoms mapping.
         // first index at winningTickets should be first winner, second is the second winner ...
+        /* random using n numbers, get the index, take it into the last element of the array
+        the rest of the winners are selected using the random number of the previous winner
+        */
+        uint lotteryNo = getLotteryNo(block.timestamp / (1 weeks));
+        uint nofWinners = ceilLog2(getTotalLotteryMoneyCollected(lotteryNo));
+        if (nofWinners == 0) {
+            return;
+        }
+        uint n = randomNumbers.length;
+        uint sum = 0;
+        uint xor = 0;
+        for (uint i = 0; i < n; i++) {
+            sum += randomNumbers[i];
+            xor ^= randomNumbers[i];
+        }
+        uint index = (sum - xor) % n;
+        winningTickets[lotteryNo].push(randomNumbers[index]);
+        for (uint i = 0; i < nofWinners - 1; i++) { // check if ending condition is true
+            (randomNumbers[index], randomNumbers[n - 1]) = (randomNumbers[n - 1], randomNumbers[index]);
+            index = randomNumbers[n - 1 - i] % (n - 1 - i);
+            winningTickets[lotteryNo].push(randomNumbers[index]);
+        }
     }
 
     function calculatePrize(uint i, uint256 totalSupply) public pure returns (uint amount) { 
@@ -158,13 +192,13 @@ for each address, a ticket list, linked list or array
 
     // hoca winning ticketlar uzerinde looplayabilirsiniz cunku nasil olsa log M kadar baya kucuk demisti
     function checkIfTicketWon(uint ticket_no) public view returns (uint amount) {
-        // favors mapping ticket => i where i is ith winning
+        require(getLotteryNo(block.timestamp / (1 weeks)) > ticketsFromNo[ticket_no].getLotteryNo(), "Lottery is not finished yet");
+        require(ticket_no < ticketCounter, "Ticket does not exist");
         Ticket ticket = ticketsFromNo[ticket_no];
         uint lotteryNo = ticket.getLotteryNo();
         for (uint i = 0; i < winningTickets[lotteryNo].length; i++) {
             if (winningTickets[lotteryNo][i] == ticket_no) {
-                // altta son index yerine getTotalLotteryMoneyCollected kullanabiliriz bir bak (o zaman lottery no yu da vermek gerekir?)
-                return calculatePrize(i + 1, totalSupplies[totalSupplies.length - 1]);
+                return calculatePrize(i + 1, totalSupplies[lotteryNo]);
             }
         }
         return 0;
@@ -172,8 +206,11 @@ for each address, a ticket list, linked list or array
 
 //here, the money earned by the lottery can be withdrawn after the lottery ends, not during the lottery period
     function collectTicketPrize(uint ticket_no) public {
-        // require(); check the time
+        require(getLotteryNo(block.timestamp / (1 weeks)) > ticketsFromNo[ticket_no].getLotteryNo(), "Lottery is not finished yet");
+        require(ticket_no < ticketCounter, "Ticket does not exist");
+        require(ticketsFromNo[ticket_no].status() != 4, "Ticket prize has already been collected");
         uint256 amount = checkIfTicketWon(ticket_no);
+        ticketsFromNo[ticket_no].setStatus(4);
         balances[ticketsFromNo[ticket_no].getOwner()] += amount;
     }
 
@@ -186,24 +223,29 @@ for each address, a ticket list, linked list or array
     }
     
     function getLotteryNo(uint unixtimeinweek) public view returns (uint lottery_no) {
-        return unixtimeinweek;   //if 5 weeks is given as time, then return 5 as the lottery number?
+        // maybe we need to use start variable here also, like (time - start) in week format
+        return unixtimeinweek - (start / (1 weeks)); // test et int geliyo mu
     }
 
     function getTotalLotteryMoneyCollected(uint lottery_no) public view returns (uint amount) {
         return totalSupplies[lottery_no];
     }
 
-    function resetLottery(uint lottery_no) public {
-        // when the 7 day period ends, the state variables should be reset
-        uint time_in_week = (block.timestamp - start) / (60 * 60 * 24 * 7);
-        uint currentLottery = getLotteryNo(time_in_week);
-        require(lottery_no != currentLottery, "Lottery should not be resetted");
+    function resetLottery() public {
+        // schedule every 1 week
+        curLotStart = block.timestamp;
+        uint currentLottery = getLotteryNo(block.timestamp / (1 weeks));
         totalSupplies.push(0);
         randomNumbers = new uint[](0);
-        winningTickets[currentLottery] = new uint[](0); 
-        //ticketsFromRandoms[currentLottery] = new mapping(uint256 => uint256);  initiate edilmiyor böyle galiba?
-
-
+        winningTickets[currentLottery] = new uint[](0);
+    }
+    
+    function runLottery() public {
+        bytes4 sig = bytes4(sha3("resetLottery()"));
+        // approximately 24 hours from now
+        uint targetBlock = block.number + 40320;
+        bytes4 scheduleCallSig = bytes4(sha3("scheduleCall(bytes4,uint256)"));
+        alarm.call(abi.encodePacked(scheduleCallSig, sig, targetBlock));
     }
     
 }

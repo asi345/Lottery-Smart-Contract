@@ -3,21 +3,23 @@
 pragma solidity >=0.7.0 <0.9.0;
 
 import "../openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
+//import "http://github.com/OpenZeppelin/openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 
 contract Ticket is ERC721 {
 
     uint256 private ticketNo;
+    address private owner;
     bytes32 private hash_rnd_number;
     /* status:
     0 for purchased
     1 for cancelled
     2 for no longer owned
     3 for revealed correctly
+    4 for prize collected
     */ 
     uint8 public status;
     // built inlerde karisiklik cikabilir gibi, sikerler kendimiz yazalim
-    address private owner;
-    uint lotteryNo; //bu binding kurmak için gerekti
+    uint private lotteryNo; //bu binding kurmak için gerekti
 
     constructor(uint256 _ticketNo, address _owner, bytes32 _hash_rnd_number, uint _lotteryNo) ERC721("Ticket", "TCK") {
         ticketNo = _ticketNo;
