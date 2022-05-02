@@ -47,7 +47,6 @@ for each address, a ticket list, linked list or array
     // time
     uint256 start;
     uint256 curLotStart;
-    address alarm;
 
     // random numbers
     uint256[] public randomNumbers;    //bunu lottery bitişlerinde boşaltmak lazım
@@ -62,7 +61,6 @@ for each address, a ticket list, linked list or array
         token = new TL(10000000000000000000);
         ticketCounter = 0;
         start = block.timestamp;
-        resetLottery(); // reset lottery schedule edilirse sil
     }
 
     fallback() external {
@@ -111,7 +109,6 @@ for each address, a ticket list, linked list or array
         balances[refunded.getOwner()] += 5;
     }
 
-
     //random number is revealed by users in reveal phase, be careful, do not reveal the hash
     // if tickethash == hash(rnd_number), then add the random number with binding to the user for
     // calculating the winner number, also ticket status should be valid
@@ -131,7 +128,6 @@ for each address, a ticket list, linked list or array
             ticket.setStatus(1);   //hash tutmayınca cancelled demek doğru mu?, adam bu fonksiyonu hiç çağırmazsa da cancelled yapmamız gerekecek
         }
     }
-
 
     // last bought ticket for a specific person, status - for example someone has bought a ticket
     // but did not reveal it and it has been cancelled, or if the ticket has been transferred to
@@ -159,7 +155,6 @@ for each address, a ticket list, linked list or array
         return log;
     }
 
-    // bunu bence biz ekleyelim
     function selectWinners() public {
         // uses randomNumbers array to select random indexes, then gets the random numbers at these
         // indexes. After it fills winningTickers array using ticketsFromRandoms mapping.
