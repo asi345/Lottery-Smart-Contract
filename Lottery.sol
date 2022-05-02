@@ -4,8 +4,10 @@ pragma solidity >=0.7.0 <0.9.0;
 
 import "./TL.sol";
 import "./Ticket.sol";
+import "../ethereum-api/oraclizeAPI_0.4.sol";
+//import "http://github.com/oraclize/ethereum-api/oraclizeAPI_0.4.sol";
 
-contract Lottery {
+contract Lottery is usingOraclize {
 
 /*
 users will provide the random numbers
@@ -216,9 +218,8 @@ for each address, a ticket list, linked list or array
 
     // winningTickets 2 boyutlu olunca lottery_no ya gore indexlenecek, onun disinda bence dogru
     function getIthWinningTicket(uint i, uint lottery_no) public view returns (uint ticket_no, uint amount) {
-        require(i > 0, "Ticket index out of bounds");
-        // log implement etmek lazim pure function olarak
-        //require(i <= log(totalSupplies[getTotalLotteryMoneyCollected(lottery_no)]) + 1, "Ticket index out of bounds");
+        require(lottery_no <= getLotteryNo(block.timestamp / (1 weeks)), "Lottery is not finished yet");
+        require(i > 0 && i <= ceilLog2(totalSupplies[getTotalLotteryMoneyCollected(lottery_no)]) + 1, "Ticket index out of bounds");
         return (winningTickets[lottery_no][i - 1], checkIfTicketWon(winningTickets[lottery_no][i - 1]));
     }
     
@@ -232,20 +233,29 @@ for each address, a ticket list, linked list or array
     }
 
     function resetLottery() public {
-        // schedule every 1 week
         curLotStart = block.timestamp;
         uint currentLottery = getLotteryNo(block.timestamp / (1 weeks));
         totalSupplies.push(0);
         randomNumbers = new uint[](0);
         winningTickets[currentLottery] = new uint[](0);
     }
-    
-    function runLottery() public {
-        bytes4 sig = bytes4(sha3("resetLottery()"));
-        // approximately 24 hours from now
-        uint targetBlock = block.number + 40320;
-        bytes4 scheduleCallSig = bytes4(sha3("scheduleCall(bytes4,uint256)"));
-        alarm.call(abi.encodePacked(scheduleCallSig, sig, targetBlock));
+
+    function purchasePhase() {
+        oraclize_query(4 days, "URL", "");
+    }
+
+    function revealPhase() {
+        oraclize_query(3 days, "URL", "");
+    }
+
+    function __callback(bytes32 myid, string result) {
+        if (msg.sender != oraclize_cbAddress()) {
+            revert();
+        }
+        resetLottery();
+        purchasePhase();
+        selectWinners();
+        revealPhase();
     }
     
 }
