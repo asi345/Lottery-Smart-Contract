@@ -47,6 +47,8 @@ for each address, a ticket list, linked list or array
     // time
     uint256 start;
     uint256 curLotStart;
+    address scheduler;
+    uint timeUnitWeek = 1 minutes;
 
     // random numbers
     uint256[] public randomNumbers;    //bunu lottery bitişlerinde boşaltmak lazım
@@ -55,6 +57,16 @@ for each address, a ticket list, linked list or array
     // iki boyutlu yapmak lazim gibi, cunku getIthWinningTicket fonksiyonu lottery_no da aliyor, ve
     // her lottery bittiginde yeni index eklemek lazim
     //tam bunu yazacaktım bro aynen ama bunu yaparsak ticket no dan lottery no ya erişebilmemiz de gerekecek.
+
+    modifier lotteryFinished {
+        require(getLotteryNo(block.timestamp / (1 weeks)) > ticketsFromNo[ticket_no].getLotteryNo(), "Lottery is not finished yet");
+        _;
+    }
+
+    modifier ticketExists {
+        require(ticket_no < ticketCounter, "Ticket does not exist");
+        _;
+    }
 
     constructor() public {
         admin = msg.sender;
@@ -101,9 +113,7 @@ for each address, a ticket list, linked list or array
 
     // does not implement an actual transfer, just update the user's account balance
     //suppose user got a ticket but did not reveal the rnd number during the reveal phase, then this refund will be applied
-    function collectTicketRefund(uint ticket_no) public {
-        require(getLotteryNo(block.timestamp / (1 weeks)) > ticketsFromNo[ticket_no].getLotteryNo(), "Lottery is not finished yet");
-        require(ticket_no < ticketCounter, "Ticket does not exist");
+    function collectTicketRefund(uint ticket_no) public lotteryFinished ticketExists {
         require(ticketsFromNo[ticket_no].status() <= 1, "Ticket is not cancelled");
         Ticket refunded = ticketsFromNo[ticket_no];
         balances[refunded.getOwner()] += 5;
@@ -113,10 +123,9 @@ for each address, a ticket list, linked list or array
     // if tickethash == hash(rnd_number), then add the random number with binding to the user for
     // calculating the winner number, also ticket status should be valid
     // else, ticket should be cancelled (bunlar benim gorusum bro eksik varsa haber et)
-    function revealRndNumber(uint ticketno, uint rnd_number) public {
+    function revealRndNumber(uint ticketno, uint rnd_number) public ticketExists {
         require(getLotteryNo(block.timestamp / (1 weeks)) == ticketsFromNo[ticketno].getLotteryNo(), "Ticket is from other lottery");
         require(block.timestamp - curLotStart >= 4 days, "Lottery is not in reveal phase");
-        require(ticketno < ticketCounter, "Ticket does not exist");
         Ticket ticket = ticketsFromNo[ticketno];
         uint lotteryNo = ticket.getLotteryNo();
         require(ticket.status() == 0, "Ticket is already revealed or cancelled");
@@ -163,7 +172,7 @@ for each address, a ticket list, linked list or array
         the rest of the winners are selected using the random number of the previous winner
         */
         uint lotteryNo = getLotteryNo(block.timestamp / (1 weeks));
-        uint nofWinners = ceilLog2(getTotalLotteryMoneyCollected(lotteryNo));   //+1 yok mu
+        uint nofWinners = ceilLog2(getTotalLotteryMoneyCollected(lotteryNo)) + 1;
         if (nofWinners == 0) {
             return;
         }
@@ -188,9 +197,7 @@ for each address, a ticket list, linked list or array
     }
 
     // hoca winning ticketlar uzerinde looplayabilirsiniz cunku nasil olsa log M kadar baya kucuk demisti
-    function checkIfTicketWon(uint ticket_no) public view returns (uint amount) {
-        require(getLotteryNo(block.timestamp / (1 weeks)) > ticketsFromNo[ticket_no].getLotteryNo(), "Lottery is not finished yet");
-        require(ticket_no < ticketCounter, "Ticket does not exist");
+    function checkIfTicketWon(uint ticket_no) public view lotteryFinished ticketExists returns (uint amount) {
         Ticket ticket = ticketsFromNo[ticket_no];
         uint lotteryNo = ticket.getLotteryNo();
         for (uint i = 0; i < winningTickets[lotteryNo].length; i++) {
@@ -202,9 +209,7 @@ for each address, a ticket list, linked list or array
     }
 
 //here, the money earned by the lottery can be withdrawn after the lottery ends, not during the lottery period
-    function collectTicketPrize(uint ticket_no) public {
-        require(getLotteryNo(block.timestamp / (1 weeks)) > ticketsFromNo[ticket_no].getLotteryNo(), "Lottery is not finished yet");
-        require(ticket_no < ticketCounter, "Ticket does not exist");
+    function collectTicketPrize(uint ticket_no) public lotteryFinished ticketExists{
         require(ticketsFromNo[ticket_no].status() != 4, "Ticket prize has already been collected");
         uint256 amount = checkIfTicketWon(ticket_no);
         ticketsFromNo[ticket_no].setStatus(4);
@@ -234,13 +239,9 @@ for each address, a ticket list, linked list or array
         randomNumbers = new uint[](0);
         winningTickets[currentLottery] = new uint[](0);
     }
-
-    function purchasePhase() {
-        oraclize_query(4 days, "URL", "");
-    }
-
-    function revealPhase() {
-        oraclize_query(3 days, "URL", "");
+    /*
+    function lotteryPeriod() {
+        oraclize_query(7 days, "URL", "");
     }
 
     function __callback(bytes32 myid, string result) {
@@ -248,9 +249,19 @@ for each address, a ticket list, linked list or array
             revert();
         }
         resetLottery();
-        purchasePhase();
-        revealPhase();
+        lotteryPeriod();
         selectWinners();  //bu revealdan sonra olmalı sanki???
     }
+
+    function lotteryPeriod() public {
+        bytes4 sig1 = bytes4(sha3("selectWinners()"));
+        bytes4 sig2 = bytes4(sha3("resetLottery()"));
+        // approximately 24 hours from now
+        uint targetBlock = block.number + 5760;
+        // the 4-byte signature of the scheduleCall function.
+        bytes4 scheduleCallSig = bytes4(sha3("scheduleCall(bytes4,uint256)"));
+        scheduler.call(scheduleCallSig, sig1, targetBlock);
+        scheduler.call(scheduleCallSig, sig2, targetBlock);
+    }*/
     
 }
