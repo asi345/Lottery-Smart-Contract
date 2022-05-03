@@ -72,7 +72,7 @@ for each address, a ticket list, linked list or array
     }
 
     function depositTL(uint amnt) public {
-        token.approve(msg.sender, amnt);
+        //token.approve(msg.sender, amnt);  no need
         if (token.transfer(address(this), amnt)) {
             balances[msg.sender] += amnt;
         }
@@ -81,7 +81,7 @@ for each address, a ticket list, linked list or array
     
     function withdrawTL(uint amnt) public {
         require(amnt <= balances[msg.sender], "Not enough TL in the account");
-        token.approve(msg.sender, amnt);
+        //token.approve(msg.sender, amnt);  no need
         if (token.send(address(this), msg.sender, amnt)) {
             balances[msg.sender] -= amnt;
         }
@@ -163,7 +163,7 @@ for each address, a ticket list, linked list or array
         the rest of the winners are selected using the random number of the previous winner
         */
         uint lotteryNo = getLotteryNo(block.timestamp / (1 weeks));
-        uint nofWinners = ceilLog2(getTotalLotteryMoneyCollected(lotteryNo));
+        uint nofWinners = ceilLog2(getTotalLotteryMoneyCollected(lotteryNo));   //+1 yok mu
         if (nofWinners == 0) {
             return;
         }
@@ -178,7 +178,7 @@ for each address, a ticket list, linked list or array
         winningTickets[lotteryNo].push(randomNumbers[index]);
         for (uint i = 0; i < nofWinners - 1; i++) { // check if ending condition is true
             (randomNumbers[index], randomNumbers[n - 1]) = (randomNumbers[n - 1], randomNumbers[index]);
-            index = randomNumbers[n - 1 - i] % (n - 1 - i);
+            index = randomNumbers[n - 1 - i] % (n - 1 - i);   //çok sağlam bir kıstas mı acaba
             winningTickets[lotteryNo].push(randomNumbers[index]);
         }
     }
@@ -249,8 +249,8 @@ for each address, a ticket list, linked list or array
         }
         resetLottery();
         purchasePhase();
-        selectWinners();
         revealPhase();
+        selectWinners();  //bu revealdan sonra olmalı sanki???
     }
     
 }
