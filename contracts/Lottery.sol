@@ -35,7 +35,7 @@ for each address, a ticket list, linked list or array
     address payable[] public users;
 
     // payment
-    TL public token;
+    TL public token ;
     mapping(address => uint256) public balances;
     uint256[] public totalSupplies; // indexed by lottery_no
 
@@ -45,7 +45,7 @@ for each address, a ticket list, linked list or array
     mapping(uint256 => mapping(address => Ticket[])) public ticketsFromLottery;
 
     // time
-    uint256 start;
+    uint256 public start;
     uint256 curLotStart;
     address scheduler;
     uint timeUnitWeek = 1 minutes;
@@ -68,9 +68,10 @@ for each address, a ticket list, linked list or array
         _;
     }
 
+//nasıl run out of gas?!
     constructor() public {
         admin = msg.sender;
-        token = new TL(100000000);
+        //token = new TL(100000000);
         ticketCounter = 0;
         start = block.timestamp;
     }
@@ -239,29 +240,6 @@ for each address, a ticket list, linked list or array
         randomNumbers = new uint[](0);
         winningTickets[currentLottery] = new uint[](0);
     }
-    /*
-    function lotteryPeriod() {
-        oraclize_query(7 days, "URL", "");
-    }
-
-    function __callback(bytes32 myid, string result) {
-        if (msg.sender != oraclize_cbAddress()) {
-            revert();
-        }
-        resetLottery();
-        lotteryPeriod();
-        selectWinners();  //bu revealdan sonra olmalı sanki???
-    }
-
-    function lotteryPeriod() public {
-        bytes4 sig1 = bytes4(sha3("selectWinners()"));
-        bytes4 sig2 = bytes4(sha3("resetLottery()"));
-        // approximately 24 hours from now
-        uint targetBlock = block.number + 5760;
-        // the 4-byte signature of the scheduleCall function.
-        bytes4 scheduleCallSig = bytes4(sha3("scheduleCall(bytes4,uint256)"));
-        scheduler.call(scheduleCallSig, sig1, targetBlock);
-        scheduler.call(scheduleCallSig, sig2, targetBlock);
-    }*/
+   
     
 }
