@@ -58,19 +58,19 @@ for each address, a ticket list, linked list or array
     // her lottery bittiginde yeni index eklemek lazim
     //tam bunu yazacaktım bro aynen ama bunu yaparsak ticket no dan lottery no ya erişebilmemiz de gerekecek.
 
-    modifier lotteryFinished {
+    modifier lotteryFinished (uint ticket_no){
         require(getLotteryNo(block.timestamp / (1 weeks)) > ticketsFromNo[ticket_no].getLotteryNo(), "Lottery is not finished yet");
         _;
     }
 
-    modifier ticketExists {
+    modifier ticketExists (uint ticket_no){
         require(ticket_no < ticketCounter, "Ticket does not exist");
         _;
     }
 
     constructor() public {
         admin = msg.sender;
-        token = new TL(10000000000000000000);
+        token = new TL(100000000);
         ticketCounter = 0;
         start = block.timestamp;
     }
@@ -113,7 +113,7 @@ for each address, a ticket list, linked list or array
 
     // does not implement an actual transfer, just update the user's account balance
     //suppose user got a ticket but did not reveal the rnd number during the reveal phase, then this refund will be applied
-    function collectTicketRefund(uint ticket_no) public lotteryFinished ticketExists {
+    function collectTicketRefund(uint ticket_no) public lotteryFinished(ticket_no) ticketExists(ticket_no) {
         require(ticketsFromNo[ticket_no].status() <= 1, "Ticket is not cancelled");
         Ticket refunded = ticketsFromNo[ticket_no];
         balances[refunded.getOwner()] += 5;
@@ -123,7 +123,7 @@ for each address, a ticket list, linked list or array
     // if tickethash == hash(rnd_number), then add the random number with binding to the user for
     // calculating the winner number, also ticket status should be valid
     // else, ticket should be cancelled (bunlar benim gorusum bro eksik varsa haber et)
-    function revealRndNumber(uint ticketno, uint rnd_number) public ticketExists {
+    function revealRndNumber(uint ticketno, uint rnd_number) public ticketExists(ticketno) {
         require(getLotteryNo(block.timestamp / (1 weeks)) == ticketsFromNo[ticketno].getLotteryNo(), "Ticket is from other lottery");
         require(block.timestamp - curLotStart >= 4 days, "Lottery is not in reveal phase");
         Ticket ticket = ticketsFromNo[ticketno];
@@ -197,7 +197,7 @@ for each address, a ticket list, linked list or array
     }
 
     // hoca winning ticketlar uzerinde looplayabilirsiniz cunku nasil olsa log M kadar baya kucuk demisti
-    function checkIfTicketWon(uint ticket_no) public view lotteryFinished ticketExists returns (uint amount) {
+    function checkIfTicketWon(uint ticket_no) public view lotteryFinished(ticket_no) ticketExists(ticket_no) returns (uint amount) {
         Ticket ticket = ticketsFromNo[ticket_no];
         uint lotteryNo = ticket.getLotteryNo();
         for (uint i = 0; i < winningTickets[lotteryNo].length; i++) {
@@ -209,7 +209,7 @@ for each address, a ticket list, linked list or array
     }
 
 //here, the money earned by the lottery can be withdrawn after the lottery ends, not during the lottery period
-    function collectTicketPrize(uint ticket_no) public lotteryFinished ticketExists{
+    function collectTicketPrize(uint ticket_no) public lotteryFinished(ticket_no) ticketExists(ticket_no) {
         require(ticketsFromNo[ticket_no].status() != 4, "Ticket prize has already been collected");
         uint256 amount = checkIfTicketWon(ticket_no);
         ticketsFromNo[ticket_no].setStatus(4);
