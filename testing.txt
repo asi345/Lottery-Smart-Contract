@@ -1,0 +1,9 @@
+https://dev.to/nazeeh21/testing-solidity-smart-contracts-3jho for testing
+https://samfrenchblog.com/?p=315
+https://github.com/loki-sama/solidity-lottery/blob/master/test/lottery.js
+
+
+
+buna bak: https://www.youtube.com/watch?v=62f757RVEvU
+
+https://medium.com/coinmonks/test-a-smart-contract-with-truffle-3eb8e1929370
