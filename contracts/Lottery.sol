@@ -198,7 +198,7 @@ for each address, a ticket list, linked list or array
     }
 
     // hoca winning ticketlar uzerinde looplayabilirsiniz cunku nasil olsa log M kadar baya kucuk demisti
-    function checkIfTicketWon(uint ticket_no) public view ticketExists(ticket_no) lotteryFinished(ticket_no) returns (uint amount) {
+    function checkIfTicketWon(uint ticket_no) public ticketExists(ticket_no) lotteryFinished(ticket_no) returns (uint amount) {
         Ticket ticket = ticketsFromNo[ticket_no];
         uint lotteryNo = ticket.getLotteryNo();
         ensureResults(lotteryNo);
@@ -220,7 +220,7 @@ for each address, a ticket list, linked list or array
     }
 
     // winningTickets 2 boyutlu olunca lottery_no ya gore indexlenecek, onun disinda bence dogru
-    function getIthWinningTicket(uint i, uint lottery_no) public view returns (uint ticket_no, uint amount) {
+    function getIthWinningTicket(uint i, uint lottery_no) public returns (uint ticket_no, uint amount) {
         require(lottery_no <= getLotteryNo(block.timestamp / (1 weeks)), "Lottery is not finished yet");
         require(i > 0 && i <= ceilLog2(getTotalLotteryMoneyCollected(lottery_no)) + 1, "Ticket index out of bounds or ticket has not won");
         ensureResults(lottery_no);
