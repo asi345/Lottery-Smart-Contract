@@ -43,7 +43,7 @@ for each address, a ticket list, linked list or array
 
     // time
     uint256 public start;
-    address scheduler;
+    mapping(uint256 => uint8) public isSelected; // whether winners are chosen for the lotteries, key is lottery_no
     uint timeUnitWeek = 1 minutes;
 
     // random numbers
@@ -158,14 +158,13 @@ for each address, a ticket list, linked list or array
         return log;
     }
 
-    function selectWinners() public {
+    function selectWinners(uint lotteryNo) public {
         // uses randomNumbers array to select random indexes, then gets the random numbers at these
         // indexes. After it fills winningTickers array using ticketsFromRandoms mapping.
         // first index at winningTickets should be first winner, second is the second winner ...
         /* random using n numbers, get the index, take it into the last element of the array
         the rest of the winners are selected using the random number of the previous winner
         */
-        uint lotteryNo = getLotteryNo(block.timestamp / (1 weeks));
         uint nofWinners = ceilLog2(getTotalLotteryMoneyCollected(lotteryNo)) + 1;
         if (nofWinners == 0) {
             return;
@@ -187,14 +186,22 @@ for each address, a ticket list, linked list or array
         }
     }
 
+    function ensureResults(uint lottery_no) public {
+        if (isSelected[lotteryNo] == 0) {
+            selectWinners(lotteryNo);
+            isSelected[lotteryNo] = 1;
+        }
+    }
+
     function calculatePrize(uint i, uint256 totalSupply) public pure returns (uint amount) { 
         return (totalSupply / (2**i)) + ((totalSupply / (2**(i - 1))) % 2); // does integer division, automatic flooring
     }
 
     // hoca winning ticketlar uzerinde looplayabilirsiniz cunku nasil olsa log M kadar baya kucuk demisti
-    function checkIfTicketWon(uint ticket_no) public view lotteryFinished(ticket_no) ticketExists(ticket_no) returns (uint amount) {
+    function checkIfTicketWon(uint ticket_no) public view ticketExists(ticket_no) lotteryFinished(ticket_no) returns (uint amount) {
         Ticket ticket = ticketsFromNo[ticket_no];
         uint lotteryNo = ticket.getLotteryNo();
+        ensureResults(lotteryNo);
         for (uint i = 0; i < winningTickets[lotteryNo].length; i++) {
             if (winningTickets[lotteryNo][i] == ticket_no) {
                 return calculatePrize(i + 1, totalSupplies[lotteryNo]);
@@ -204,8 +211,9 @@ for each address, a ticket list, linked list or array
     }
 
 //here, the money earned by the lottery can be withdrawn after the lottery ends, not during the lottery period
-    function collectTicketPrize(uint ticket_no) public lotteryFinished(ticket_no) ticketExists(ticket_no) {
+    function collectTicketPrize(uint ticket_no) public ticketExists(ticket_no) lotteryFinished(ticket_no) {
         require(ticketsFromNo[ticket_no].status() != 4, "Ticket prize has already been collected");
+        ensureResults(lotteryNo);
         uint256 amount = checkIfTicketWon(ticket_no);
         ticketsFromNo[ticket_no].setStatus(4);
         balances[ticketsFromNo[ticket_no].getOwner()] += amount;
@@ -215,6 +223,7 @@ for each address, a ticket list, linked list or array
     function getIthWinningTicket(uint i, uint lottery_no) public view returns (uint ticket_no, uint amount) {
         require(lottery_no <= getLotteryNo(block.timestamp / (1 weeks)), "Lottery is not finished yet");
         require(i > 0 && i <= ceilLog2(getTotalLotteryMoneyCollected(lottery_no)) + 1, "Ticket index out of bounds or ticket has not won");
+        ensureResults(lottery_no);
         return (winningTickets[lottery_no][i - 1], checkIfTicketWon(winningTickets[lottery_no][i - 1]));
     }
     
@@ -225,10 +234,5 @@ for each address, a ticket list, linked list or array
     function getTotalLotteryMoneyCollected(uint lottery_no) public view returns (uint amount) {
         return totalSupplies[lottery_no];
     }
-
-    function resetLottery() public {
-        winningTickets[currentLottery] = new uint[](0);
-    }
    
-    
 }
