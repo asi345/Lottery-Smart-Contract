@@ -1,7 +1,43 @@
 
-var Lottery = artifacts.require("./Lottery.sol");
+var Lottery = artifacts.require("Lottery");
+
+contract("Lottery",() =>{   //bu çalışıyor mu bakmak lazım henüz deploylayamıyoruz bile
+
+//hepsinde lotter initiate etmek yerine mocha frameworkü kurup 
+//const lottery = null;
+//before(async()=>{
+//    lottery = await Lottery.deployed();
+//});
+//before tüm testlerden önce uygulatır
 
 
+    it("Should deploy properly", async () =>{
+        const lottery = await Lottery.deployed();
+        console.log(lottery.address);
+        assert(lottery.address != '');
+    });
+    it("Should calculate prize correctly", async () =>{
+        const lottery = await Lottery.deployed();
+        const result = lottery.calculatePrize(1,3);
+        assert(result === 2.5);
+    });
+    it("Should reset correctly", async () =>{
+        const lottery = await Lottery.deployed();
+        await lottery.resetLottery();
+        const result = await lottery.totalSupplies(lottery.totalSupplies.length - 1);  //doğrudur inş, güya bu getter gibiymiş
+        assert(result.toNumber() === 0);  //bu çok iyi bir test değil deneme amaçlı
+    });
+    //bir array dönerse tüm elemanları big number olarak dönecek dolayısıyla map fonksiyonuyla onlara toNumber uygulayıp elde etmek lazımmış
+    //contract blockunda uygulananlar birbrilerine bağlıdır. ilk testte bir arraye bir şey eklersen ikinci testte o eklediğin elemanı bulabilirsin.
+    //assert(array === [1,2,3]); yanlış
+    //assert.deepEqual(array, [1,2,3]); doğru
+    //fonksiyon tuple dönüyorsa result[0], result[1] şeklinde değerleri alabilirsin
+    //to test that a function reverts, use try catch
+});
+
+
+
+/*
 contract("Lottery", accounts => {
     it("Deposit Tl correctly", async () => {
         // Get initial balances of first and second account.
@@ -23,8 +59,11 @@ contract("Lottery", accounts => {
         // Test the effect of the transfer.
         assert.equal(finalBalance.toNumber(), initialBalance.toNumber() - amount, "Amount wasn't correctly deposited to the account");
         assert.equal(finalLotteryBalance.toNumber(), initialLotteryBalance.toNumber() + amount, "Amount wasn't correctly deposited to the contract");
+       
     });
 
      
 
 });
+
+*/

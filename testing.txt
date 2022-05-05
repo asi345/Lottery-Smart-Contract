@@ -14,3 +14,7 @@ truffle migrate -> deploys contracts : see truffle-config.js and 1_initial_migra
 migrate çalıştırmak için önce develop çalışmalı şart
 bunda run out of gas hatası aldık nasıl çözeriz
 truffle test -> runs the written unit tests under test directory
+
+truffle testten gelen error: 
+Error: Cannot find module 'babel-runtime/core-js/object/entries'
+Require stack:....
