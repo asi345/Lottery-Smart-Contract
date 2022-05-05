@@ -32,7 +32,7 @@ for each address, a ticket list, linked list or array
     address payable[] public users;
 
     // payment
-    TL public token ;
+    TL public token;
     mapping(address => uint256) public balances;
     mapping(uint256 => uint256) public totalSupplies; // key is lottery_no
 
@@ -187,9 +187,9 @@ for each address, a ticket list, linked list or array
     }
 
     function ensureResults(uint lottery_no) public {
-        if (isSelected[lotteryNo] == 0) {
-            selectWinners(lotteryNo);
-            isSelected[lotteryNo] = 1;
+        if (isSelected[lottery_no] == 0) {
+            selectWinners(lottery_no);
+            isSelected[lottery_no] = 1;
         }
     }
 
@@ -213,7 +213,7 @@ for each address, a ticket list, linked list or array
 //here, the money earned by the lottery can be withdrawn after the lottery ends, not during the lottery period
     function collectTicketPrize(uint ticket_no) public ticketExists(ticket_no) lotteryFinished(ticket_no) {
         require(ticketsFromNo[ticket_no].status() != 4, "Ticket prize has already been collected");
-        ensureResults(lotteryNo);
+        ensureResults(ticketsFromNo[ticket_no].getLotteryNo());
         uint256 amount = checkIfTicketWon(ticket_no);
         ticketsFromNo[ticket_no].setStatus(4);
         balances[ticketsFromNo[ticket_no].getOwner()] += amount;
