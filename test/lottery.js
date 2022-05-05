@@ -1,9 +1,9 @@
 
 var Lottery = artifacts.require("Lottery");
 
-contract("Lottery",() =>{   //bu çalışıyor mu bakmak lazım henüz deploylayamıyoruz bile
-
-//hepsinde lotter initiate etmek yerine mocha frameworkü kurup 
+contract("Lottery",(accounts) =>{   //bu çalışıyor mu bakmak lazım henüz deploylayamıyoruz bile
+//accounts is given to access accounts in the current network
+//hepsinde lotter initiate etmek yerine mocha frameworkü kurup (belki mochasız da çalışıyodur)
 //const lottery = null;
 //before(async()=>{
 //    lottery = await Lottery.deployed();
@@ -33,12 +33,9 @@ contract("Lottery",() =>{   //bu çalışıyor mu bakmak lazım henüz deploylay
     //assert.deepEqual(array, [1,2,3]); doğru
     //fonksiyon tuple dönüyorsa result[0], result[1] şeklinde değerleri alabilirsin
     //to test that a function reverts, use try catch
-});
 
 
 
-/*
-contract("Lottery", accounts => {
     it("Deposit Tl correctly", async () => {
         // Get initial balances of first and second account.
         const account = accounts[0];
@@ -48,8 +45,8 @@ contract("Lottery", accounts => {
         const initialLotteryBalance = await web3.eth.getBalance(lottery.address);
 
         // Call the transfer function.
-        await lottery.deposit(amount, {from: account});
-        account.call{gas: 1000000}(abi.encodeWithSignature("DepositTl(uint)", 15))  //hesabın deposit tl çaırmasını sağlamak lazım
+        await lottery.depositTl(amount, {from: account});   //burada account tarafından çağrıldıığını ifade edebiliyoruz.
+        //{from: account, value: web3.utils.toWei('3','ether')}   defines msg.value = 3
     ;
 
         // Get balances after the transfer.
@@ -59,11 +56,11 @@ contract("Lottery", accounts => {
         // Test the effect of the transfer.
         assert.equal(finalBalance.toNumber(), initialBalance.toNumber() - amount, "Amount wasn't correctly deposited to the account");
         assert.equal(finalLotteryBalance.toNumber(), initialLotteryBalance.toNumber() + amount, "Amount wasn't correctly deposited to the contract");
+
+        //balances taki elemanlara nasıl ulaşırız bakmak lazım
        
     });
-
-     
-
 });
 
-*/
+
+
