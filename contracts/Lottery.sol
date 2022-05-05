@@ -71,7 +71,7 @@ for each address, a ticket list, linked list or array
 //nasıl run out of gas?!
     constructor() public {
         admin = msg.sender;
-        //token = new TL(100000000);
+        token = new TL(100000000);
         ticketCounter = 0;
         start = block.timestamp;
     }
