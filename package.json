@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/asi345/Lottery-Smart-Contract#readme",
   "dependencies": {
-    "openzeppelin-solidity": "4.6.0"
+    "openzeppelin-solidity": "4.6.0",
+    "truffle-contract-size": "^2.0.1"
   }
 }

@@ -92,12 +92,13 @@ module.exports = {
        //settings: {          // See the solidity docs for advice about optimization and evmVersion
         optimizer: {
           enabled: true,
-          runs: 1000
+          runs: 50   //small runs = short code size but inefficient code run
         },
       //  evmVersion: "byzantium"
       // }
     }
   },
+  plugins: ["truffle-contract-size"],
 
   // Truffle DB is currently disabled by default; to enable it, change enabled:
   // false to enabled: true. The default storage location can also be

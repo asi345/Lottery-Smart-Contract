@@ -8,7 +8,7 @@ import "./Ticket.sol";
 contract Lottery{
 
 /*
-users will provide the random numbers
+users will provide the random numberss
 for winning number, we will xor or get mean of them, just manipulate the given ones
 2 stages: first stage, users will take the hash of the random numbers and send them since
 the numbers are visible in EVM, they will commit the random number
@@ -28,16 +28,16 @@ for each address, a ticket list, linked list or array
 // key exists and is mapped to a value whose byte-representation are all zeros
 */
     // people
-    address public admin;
+    //address public admin;
     address payable[] public users;
 
     // payment
-    TL public token;
+    TL public token = new TL(10000);
     mapping(address => uint256) public balances;
     mapping(uint256 => uint256) public totalSupplies; // key is lottery_no
 
     // tickets
-    uint256 public ticketCounter;
+    uint256 public ticketCounter = 0;
     mapping(uint256 => Ticket) public ticketsFromNo;
     mapping(uint256 => mapping(address => Ticket[])) public ticketsFromLottery;
 
@@ -48,8 +48,11 @@ for each address, a ticket list, linked list or array
 
     // random numbers
     mapping(uint256 => uint256[]) public randomNumbers; // key is lottery_no
-    mapping(uint => mapping(uint256 => uint256)) public ticketsFromRandoms; // maps to ticket_no
+    //mapping(uint => mapping(uint256 => uint256)) public ticketsFromRandoms; // maps to ticket_no
     mapping(uint => uint256[]) public winningTickets; // ticket_nos of winning tickets, key is lottery_no
+
+
+
 
     modifier lotteryFinished (uint ticket_no){
         require(getLotteryNo(block.timestamp / (1 weeks)) > ticketsFromNo[ticket_no].getLotteryNo(), "Lottery is not finished yet");
@@ -63,9 +66,6 @@ for each address, a ticket list, linked list or array
 
 //nasıl run out of gas?!
     constructor() public {
-        admin = msg.sender;
-        token = new TL(100000000);
-        ticketCounter = 0;
         start = block.timestamp;
     }
 
@@ -95,7 +95,7 @@ for each address, a ticket list, linked list or array
 
     function buyTicket(bytes32 hash_rnd_number) public {
         uint lotteryNo = getLotteryNo(block.timestamp / (1 weeks));
-        require(block.timestamp - (1 weeks) * lotteryNo < 4 days, "Lottery is not in purchase phase");
+        require(block.timestamp - start - (1 weeks) * lotteryNo < 4 days, "Lottery is not in purchase phase");
         require(balances[msg.sender] >= 10, "Not enough TL in the account");
         balances[msg.sender] -= 10;
         Ticket curTicket = new Ticket(ticketCounter, msg.sender, hash_rnd_number, lotteryNo);
@@ -125,7 +125,7 @@ for each address, a ticket list, linked list or array
         require(ticket.status() == 0, "Ticket is already revealed or cancelled");
         if (ticket.getHash_rnd_number() == keccak256(abi.encodePacked(rnd_number))) {
             randomNumbers[lotteryNo].push(rnd_number);
-            ticketsFromRandoms[lotteryNo][rnd_number] = ticketno;
+            //ticketsFromRandoms[lotteryNo][rnd_number] = ticketno;
             ticket.setStatus(3);
         } else {
             ticket.setStatus(1);   //hash tutmayınca cancelled demek doğru mu?, adam bu fonksiyonu hiç çağırmazsa da cancelled yapmamız gerekecek
