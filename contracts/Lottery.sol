@@ -55,7 +55,7 @@ for each address, a ticket list, linked list or array
 
 
     modifier lotteryFinished (uint ticket_no){
-        require(getLotteryNo(block.timestamp / (1 weeks)) > ticketsFromNo[ticket_no].getLotteryNo(), "Lottery is not finished yet");
+        require(getLotteryNoBySec(block.timestamp) > ticketsFromNo[ticket_no].getLotteryNo(), "Lottery is not finished yet");
         _;
     }
 
@@ -78,7 +78,6 @@ for each address, a ticket list, linked list or array
     }
 
     function depositTL(uint amnt) public {
-        //token.approve(msg.sender, amnt);  no need
         if (token.transfer(address(this), amnt)) {
             balances[msg.sender] += amnt;
         }
@@ -87,14 +86,13 @@ for each address, a ticket list, linked list or array
     
     function withdrawTL(uint amnt) public {
         require(amnt <= balances[msg.sender], "Not enough TL in the account");
-        //token.approve(msg.sender, amnt);  no need
         if (token.send(address(this), msg.sender, amnt)) {
             balances[msg.sender] -= amnt;
         }
     }
 
     function buyTicket(bytes32 hash_rnd_number) public {
-        uint lotteryNo = getLotteryNo(block.timestamp / (1 weeks));
+        uint lotteryNo = getLotteryNoBySec(block.timestamp);
         require(block.timestamp - start - (1 weeks) * lotteryNo < 4 days, "Lottery is not in purchase phase");
         require(balances[msg.sender] >= 10, "Not enough TL in the account");
         balances[msg.sender] -= 10;
@@ -120,7 +118,7 @@ for each address, a ticket list, linked list or array
     function revealRndNumber(uint ticketno, uint rnd_number) public ticketExists(ticketno) {
         Ticket ticket = ticketsFromNo[ticketno];
         uint lotteryNo = ticket.getLotteryNo();
-        require(getLotteryNo(block.timestamp / (1 weeks)) == lotteryNo, "Ticket is from other lottery");
+        require(getLotteryNoBySec(block.timestamp) == lotteryNo, "Ticket is from other lottery");
         require(block.timestamp - (1 weeks) * lotteryNo >= 4 days, "Lottery is not in reveal phase");
         require(ticket.status() == 0, "Ticket is already revealed or cancelled");
         if (ticket.getHash_rnd_number() == keccak256(abi.encodePacked(rnd_number))) {
@@ -221,7 +219,7 @@ for each address, a ticket list, linked list or array
 
     // winningTickets 2 boyutlu olunca lottery_no ya gore indexlenecek, onun disinda bence dogru
     function getIthWinningTicket(uint i, uint lottery_no) public returns (uint ticket_no, uint amount) {
-        require(lottery_no <= getLotteryNo(block.timestamp / (1 weeks)), "Lottery is not finished yet");
+        require(lottery_no <= getLotteryNoBySec(block.timestamp), "Lottery is not finished yet");
         require(i > 0 && i <= ceilLog2(getTotalLotteryMoneyCollected(lottery_no)) + 1, "Ticket index out of bounds or ticket has not won");
         ensureResults(lottery_no);
         return (winningTickets[lottery_no][i - 1], checkIfTicketWon(winningTickets[lottery_no][i - 1]));
@@ -231,8 +229,16 @@ for each address, a ticket list, linked list or array
         return unixtimeinweek - (start / (1 weeks));
     }
 
+    function getLotteryNoBySec(uint unixtimeinsec) public view returns (uint lottery_no) {
+        return (unixtimeinsec - start) / (1 weeks);
+    }
+
     function getTotalLotteryMoneyCollected(uint lottery_no) public view returns (uint amount) {
         return totalSupplies[lottery_no];
+    }
+
+    function getTime() public view returns (uint unixtime) {
+        return block.timestamp;
     }
    
 }
