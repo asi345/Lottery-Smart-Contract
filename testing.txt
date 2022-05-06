@@ -22,3 +22,8 @@ truffle test -> runs the written unit tests under test directory
 truffle testten gelen error: 
 Error: Cannot find module 'babel-runtime/core-js/object/entries'
 Require stack:....
+
+https://ethereum.stackexchange.com/questions/67593/as-in-truffle-tests-pass-the-check-by-block-timestamp to rewind time
+https://medium.com/coinmonks/testing-time-dependent-logic-in-ethereum-smart-contracts-1b24845c7f72
+
+

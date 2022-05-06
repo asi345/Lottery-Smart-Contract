@@ -1,5 +1,6 @@
 
 var Lottery = artifacts.require("Lottery");
+const helper = require('../utils/utils.js');
 
 contract("Lottery",(accounts) =>{   //bu çalışıyor mu bakmak lazım henüz deploylayamıyoruz bile
 //accounts is given to access accounts in the current network
@@ -122,6 +123,60 @@ contract("Lottery",(accounts) =>{   //bu çalışıyor mu bakmak lazım henüz d
         const total_supply = await lottery.totalSupplies.call(0);
         assert.equal(total_supply.toNumber(), 10, "Total supply was not updated correctly after ticket purchase");
     })
+
+    it("Multiple accounts should deposit tl and buy tickets", async () => {  //10 tane deneyebiliyoruz bçyle 100 nasıl olur?
+        const lottery = await Lottery.deployed();
+        const amount = 20;
+        
+
+        for(let i = 1; i<10; i++){   //böyle yaptım ama birbirleirni bekliyor gibiler uzun sürüyor sorun olur mu? mesela 1000 account çok vakit alır
+            account = accounts[i];
+            await lottery.depositTL(amount, {from: account}); 
+            const rnd_number = web3.utils.randomHex(32);
+            const hashrndnumber = web3.utils.soliditySha3(rnd_number);
+            await lottery.buyTicket(hashrndnumber, {from: account});
+        }
+
+        const ticket_count = await lottery.ticketCounter();
+        assert.equal(ticket_count.toNumber(), 10, "Ticket counter was not updated correctly after ticket purchase");
+        const total_supply = await lottery.totalSupplies.call(0);
+        assert.equal(total_supply.toNumber(), 100, "Total supply was not updated correctly after ticket purchase");
+    });
+
+    it("Should not be able to reveal rnd number before reveal phase", async () => {
+        const account = accounts[0];
+        const lottery = await Lottery.deployed();
+        const rnd_number = web3.utils.randomHex(32);  //does not have to be same, we are not testing it yet
+        const ticket_no = 0;
+        try{
+            await lottery.revealRndNumber(rnd_number, ticket_no, {from: account});
+        }
+        catch(error){
+            assert(error);
+            return;
+        }
+        assert(false);
+    })
+
+    it("Should be able to reveal rnd number during reveal phase", async () => {
+        advancement = 86400 * 5 // 10 Days
+        await helper.advanceTimeAndBlock(advancement)
+        //await web3.currentProvider.send({method: "evm_increaseTime", params: [60*60*24*5]});   //mock 5 days
+        const account = accounts[0];
+        const lottery = await Lottery.deployed();
+        const rnd_number = 13;  //the same random number
+        const ticket_no = 0;
+        const ticket_count = await lottery.ticketCounter();
+        console.log(ticket_count);
+        await lottery.revealRndNumber(rnd_number, ticket_no, {from: account});  //ticket status should be set to 3 ama ticket does not exist hatası geliyor
+        console.log("done");
+        const ticket = await lottery.ticketsFromNo(ticket_no);
+        const ticket_status = await ticket.status();
+        console.log(ticket_status);
+        assert(ticket_status.toNumber() == 3, "Ticket status was not set to 3");
+    });
+
+    
 });
 
 
