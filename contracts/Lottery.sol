@@ -91,7 +91,7 @@ contract Lottery {
 
     /**
     * @dev Deposits the given amount of TL into the lottery system for the caller
-    * @param amount Amount of TL to deposit
+    * @param amnt Amount of TL to deposit
     * Requirements:
     * - The caller must have at least the given amount of TL
     */
@@ -103,7 +103,7 @@ contract Lottery {
 
     /**
     * @dev Withdraws the given amount of TL from the lottery system to the caller
-    * @param amount Amount of TL to withdraw
+    * @param amnt Amount of TL to withdraw
     * Requirements:
     * - The caller must have at least the given amount of TL in the lottery system
     */

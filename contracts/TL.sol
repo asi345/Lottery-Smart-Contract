@@ -11,7 +11,7 @@ contract TL is ERC20 {
     * @dev Constructor of the TL contract
     * Creates some supply for the testing purposes
     */    
-    constructor(uint amount) public ERC20("TurkishLira", "TL") {
+    constructor(uint amount) ERC20("TurkishLira", "TL") {
         _mint(msg.sender, amount);
     }
 
