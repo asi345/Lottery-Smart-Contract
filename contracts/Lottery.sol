@@ -48,11 +48,10 @@ for each address, a ticket list, linked list or array
 
     // random numbers
     mapping(uint256 => uint256[]) public randomNumbers; // key is lottery_no
-    //mapping(uint => mapping(uint256 => uint256)) public ticketsFromRandoms; // maps to ticket_no
+    mapping(uint => mapping(uint256 => uint256)) public ticketsFromRandoms; // maps to ticket_no
     mapping(uint => uint256[]) public winningTickets; // ticket_nos of winning tickets, key is lottery_no
 
-
-
+    event lotMoney(uint amnt); // delete later, just for testing
 
     modifier lotteryFinished (uint ticket_no){
         require(getLotteryNoBySec(block.timestamp) > ticketsFromNo[ticket_no].getLotteryNo(), "Lottery is not finished yet");
@@ -123,7 +122,7 @@ for each address, a ticket list, linked list or array
         require(ticket.status() == 0, "Ticket is already revealed or cancelled");
         if (ticket.getHash_rnd_number() == keccak256(abi.encodePacked(rnd_number))) {
             randomNumbers[lotteryNo].push(rnd_number);
-            //ticketsFromRandoms[lotteryNo][rnd_number] = ticketno;
+            ticketsFromRandoms[lotteryNo][rnd_number] = ticketno;
             ticket.setStatus(3);
         } else {
             ticket.setStatus(1);   //hash tutmayınca cancelled demek doğru mu?, adam bu fonksiyonu hiç çağırmazsa da cancelled yapmamız gerekecek
@@ -147,13 +146,26 @@ for each address, a ticket list, linked list or array
     }
 
     function ceilLog2(uint num) public pure returns (uint) {
-        num -= 1;
+        /*num -= 1;
         uint log = 0;
         while (num > 0) {
-            num >>= 1;
+            num /= 2;
             log += 1;
         }
-        return log;
+        return log;*/
+        num -= 1;
+        uint x = num;
+        uint n = 0;
+        if (x >= 2**128) { x >>= 128; n += 128; }
+        if (x >= 2**64) { x >>= 64; n += 64; }
+        if (x >= 2**32) { x >>= 32; n += 32; }
+        if (x >= 2**16) { x >>= 16; n += 16; }
+        if (x >= 2**8) { x >>= 8; n += 8; }
+        if (x >= 2**4) { x >>= 4; n += 4; }
+        if (x >= 2**2) { x >>= 2; n += 2; }
+        if (x >= 2**1) { /* x >>= 1; */ n += 1; }
+        n += 1;
+        return n;
     }
 
     function selectWinners(uint lotteryNo) public {
@@ -163,6 +175,7 @@ for each address, a ticket list, linked list or array
         /* random using n numbers, get the index, take it into the last element of the array
         the rest of the winners are selected using the random number of the previous winner
         */
+        emit lotMoney(getTotalLotteryMoneyCollected(lotteryNo));
         uint nofWinners = ceilLog2(getTotalLotteryMoneyCollected(lotteryNo)) + 1;
         if (nofWinners == 0) {
             return;
@@ -175,12 +188,13 @@ for each address, a ticket list, linked list or array
             xor ^= randomNumbers[lotteryNo][i];
         }
         uint index = (sum - xor) % n;
-        winningTickets[lotteryNo].push(randomNumbers[lotteryNo][index]);
-        for (uint i = 0; i < nofWinners - 1; i++) { // check if ending condition is true
+        winningTickets[lotteryNo].push(ticketsFromRandoms[lotteryNo][randomNumbers[lotteryNo][index]]);
+        uint loopCount = nofWinners < n ? nofWinners: n;
+        for (uint i = 0; i < loopCount - 1; i++) { // check if ending condition is true
             (randomNumbers[lotteryNo][index], randomNumbers[lotteryNo][n - 1]) =
                 (randomNumbers[lotteryNo][n - 1], randomNumbers[lotteryNo][index]);
             index = randomNumbers[lotteryNo][n - 1 - i] % (n - 1 - i);   //çok sağlam bir kıstas mı acaba
-            winningTickets[lotteryNo].push(randomNumbers[lotteryNo][index]);
+            winningTickets[lotteryNo].push(ticketsFromRandoms[lotteryNo][randomNumbers[lotteryNo][index]]);
         }
     }
 

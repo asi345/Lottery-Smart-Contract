@@ -157,8 +157,7 @@ contract("Lottery",(accounts) =>{   //bu çalışıyor mu bakmak lazım henüz d
         //const lottery_no = await lottery.getLotteryNoBySec(curSec);
         //console.log(lottery_no);
         await lottery.revealRndNumber(ticket_no, rnd_number, {from: account});  //ticket status should be set to 3 ama ticket does not exist hatası geliyor
-        console.log("done");
-        var ticket = await lottery.ticketsFromNo(ticket_no);
+        var ticket = await lottery.ticketsFromNo.call(ticket_no);
         //Lottery.at(ticket).then(function(instance) {ticket = instance.status});
         console.log(ticket.constructor);
         ticket_status = await ticket.status();
@@ -166,22 +165,22 @@ contract("Lottery",(accounts) =>{   //bu çalışıyor mu bakmak lazım henüz d
         assert(ticket_status.toNumber() == 3, "Ticket status was not set to 3");
     });
 
-    it("Participants should be able to see the winning prize", async () => {
+    it("Participants should be able to see ticket's winning prize", async () => {
         advancement = 86400 * 3;
         await helper.advanceTimeAndBlock(advancement);
         const ticket_no = 0;
-        const prize = await lottery.checkIfTicketWon(ticket_no, {from: account}); // division by zero hatasi var ama calculatePrizedan degil amk
-        console.log(prize);
-        assert(prize.toNumber() > 0, "Prize was not correctly calculated");
+        await lottery.checkIfTicketWon(ticket_no);
+        const prize = await lottery.checkIfTicketWon.call(ticket_no); // division by zero hatasi var ama calculatePrizedan degil amk
+        assert(prize.toNumber() == 25, "First winning prize was not correctly calculated");
     });
 
     it("Winner ticket numbers should be correctd returned", async () => {
         const ticket_no = 0;
-        var ticket_no2;
-        var prize2;
-        ticket_no2, prize2 = await lottery.getIthWinningTicket(1, 0, {from: account}); // checkIfTicketWon bozuyor
-        assert(ticket_no == ticket_no2.toNumber(), "Ticket numbers were not correctly returned");
-        assert(prize == prize2.toNumber(), "Prizes were not correctly returned");
+        const prize = 25;
+        await lottery.getIthWinningTicket(1, 0);
+        const results = await lottery.getIthWinningTicket.call(1, 0);
+        assert(ticket_no == results['0'].toNumber(), "Ticket numbers were not correctly returned");
+        assert(prize == results['1'].toNumber(), "Prizes were not correctly returned");
     })
     
 });

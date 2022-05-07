@@ -10,7 +10,7 @@ https://www.youtube.com/watch?v=YYJgeV7sOvM (bu çok iyi test ve deployment içi
 https://medium.com/coinmonks/test-a-smart-contract-with-truffle-3eb8e1929370
 
 npm i -g ganache-cli da lazım
-ganache-cli --gasLimit=0x1fffffffffffff --allowUnlimitedContractSize -e 1000000000
+ganache-cli --gasLimit=0x1fffffffffffff --allowUnlimitedContractSize -e 1000000000 -a 250
 
 truffle compile -> compiles contracts 
 truffle develop -> to open up a console for testing 
