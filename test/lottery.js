@@ -182,6 +182,14 @@ contract("Lottery",(accounts) =>{   //bu çalışıyor mu bakmak lazım henüz d
         assert(ticket_no == results['0'].toNumber(), "Ticket numbers were not correctly returned");
         assert(prize == results['1'].toNumber(), "Prizes were not correctly returned");
     })
+
+    it("Owner of a winner ticket should be able to obtain their prize", async () => {
+        const account = accounts[0];
+        const ticket_no = 0;
+        await lottery.collectTicketPrize(ticket_no);
+        const balance = await lottery.balances.call(account);
+        assert(balance == 30, "Prize was not correctly collected"); // onceki testten 5 kalmis, istersen bunu baska hesapla yapalim lotteryi buyutup
+    })
     
 });
 
