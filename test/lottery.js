@@ -206,6 +206,3 @@ contract("Lottery",(accounts) =>{   //bu çalışıyor mu bakmak lazım henüz d
         assert(results['1'].toNumber() == 0, "Prizes were not correctly returned");
     }); 
 });
-
-
-
