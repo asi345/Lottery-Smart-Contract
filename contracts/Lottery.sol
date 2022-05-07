@@ -176,18 +176,16 @@ for each address, a ticket list, linked list or array
         the rest of the winners are selected using the random number of the previous winner
         */
         emit lotMoney(getTotalLotteryMoneyCollected(lotteryNo));
-        uint nofWinners = ceilLog2(getTotalLotteryMoneyCollected(lotteryNo)) + 1;
+        uint nofWinners = ceilLog2(getTotalLotteryMoneyCollected(lotteryNo)) + 1;  //9
         if (nofWinners == 0) {
             return;
         }
-        uint n = randomNumbers[lotteryNo].length;
-        uint sum = 0;
+        uint n = randomNumbers[lotteryNo].length;  //10
         uint xor = 0;
         for (uint i = 0; i < n; i++) {
-            sum += randomNumbers[lotteryNo][i];
             xor ^= randomNumbers[lotteryNo][i];
         }
-        uint index = (sum - xor) % n;
+        uint index = xor % n;
         winningTickets[lotteryNo].push(ticketsFromRandoms[lotteryNo][randomNumbers[lotteryNo][index]]);
         uint loopCount = nofWinners < n ? nofWinners: n;
         for (uint i = 0; i < loopCount - 1; i++) { // check if ending condition is true
@@ -224,7 +222,9 @@ for each address, a ticket list, linked list or array
 
 //here, the money earned by the lottery can be withdrawn after the lottery ends, not during the lottery period
     function collectTicketPrize(uint ticket_no) public ticketExists(ticket_no) lotteryFinished(ticket_no) {
+
         require(ticketsFromNo[ticket_no].status() != 4, "Ticket prize has already been collected");
+        require(ticketsFromNo[ticket_no].status() != 1, "Ticket has been cancelled");
         ensureResults(ticketsFromNo[ticket_no].getLotteryNo());
         uint256 amount = checkIfTicketWon(ticket_no);
         ticketsFromNo[ticket_no].setStatus(4);
@@ -253,6 +253,15 @@ for each address, a ticket list, linked list or array
 
     function getTime() public view returns (uint unixtime) {
         return block.timestamp;
+    }
+//sonradan sil
+    function getTicketStatus(uint ticket_no) public view returns (uint8 status) {
+        Ticket t = ticketsFromNo[ticket_no];
+        return t.status();
+    }
+
+    function getWinningTickets(uint lotteryNo) public view returns (uint[] memory) {
+        return winningTickets[lotteryNo];   
     }
    
 }
