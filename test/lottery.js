@@ -339,7 +339,7 @@ contract("Lottery",(accounts) =>{   //bu çalışıyor mu bakmak lazım henüz d
 
             var winticket = await lottery.getWinningTickets(0);
             console.log(winticket);
-            for(let i = 1; i<=winnercount ; i++) {
+            for(let i = 1; i <= winnercount; i++) {
                 const results = await lottery.getIthWinningTicket.call(i, 0);
                 const ticket_no = results[0].toNumber();
                 console.log(ticket_no);
