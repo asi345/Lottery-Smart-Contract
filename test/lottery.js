@@ -334,20 +334,14 @@ contract("Lottery",(accounts) =>{   //bu çalışıyor mu bakmak lazım henüz d
             var winnercount = await lottery.ceilLog2(total_supply);
             var winnercount_num = winnercount.toNumber();
             winnercount_num += 1;
-            console.log(winnercount_num);
+            //console.log(winnercount_num);
             var last = total_supply.toNumber();
-
-            var winticket = await lottery.getWinningTickets(0);
-            console.log(winticket);
-            for(let i = 1; i <= winnercount; i++) {
+            for(let i = 1; i<=winnercount ; i++) {
                 const results = await lottery.getIthWinningTicket.call(i, 0);
                 const ticket_no = results[0].toNumber();
-                console.log(ticket_no);
                 const prize_from_lottery = results[1].toNumber();
                 await lottery.checkIfTicketWon(ticket_no);
                 const prize = await lottery.checkIfTicketWon.call(ticket_no);
-                console.log(prize.toNumber());
-                console.log(prize_from_lottery);
                 assert(prize_from_lottery == prize.toNumber(), "Prizes from two functions are inconsistent");
                 assert(last > prize.toNumber(), "Prizes are not sorted");
                 last = prize.toNumber();
@@ -355,7 +349,118 @@ contract("Lottery",(accounts) =>{   //bu çalışıyor mu bakmak lazım henüz d
         })
        
 
-        //getIthOwnedTicket test edilsin
-        //boş lotterylerden sonra deneme yapılsın
+        //we will be in lottery with no 1
+        it("Participants will get multiple tickets if they win multiple times", async () => {
+            randomNumbers = [];
+            hashrandoms = [];
+            for(let i = 0; i< counter; i++) {
+                const account = accounts[i];
+                await lottery.depositTL(amount, {from: account});   //burada account tarafından çağrıldıığını ifade edebiliyoruz.
+                for(let j = 0; j< 3; j++) {  //buy 3 tickets (10,11,12 -> accounts[0]  13,14,15 -> accounts[1]  16,17,18 -> accounts[2]...)
+                    const rnd_number = web3.utils.randomHex(32);
+                    randomNumbers.push(rnd_number);
+                    const hashrndnumber = web3.utils.soliditySha3(rnd_number);
+                    hashrandoms.push(hashrndnumber);
+                    await lottery.buyTicket(hashrndnumber, {from: account});
+                }
+            }
+
+        })
+
+
+        it("Should be able to see ith owned ticket", async () => {
+
+            var account_no = 3
+            var i = 2
+            const result = await lottery.getIthOwnedTicketNo(i,1,{from: accounts[account_no]});
+            const ticket_no = result[0].toNumber();
+            const status = result[1].toNumber();
+            const expected_ticket_no = counter + account_no*3 + i - 1;
+            const expected_status = 0;
+            assert(ticket_no == expected_ticket_no, "Ticket number is not correct");
+            assert(status == expected_status, "Status is not correct");
+        })
+
+
+        it("Should not be able to see ith owned ticket in a wrong lottery or out of index", async () => {
+
+            var account_no = 3;
+            var lottery_no = 4;
+            var i = 2
+            try{
+                const result = await lottery.getIthOwnedTicketNo(i,lottery_no,{from: accounts[account_no]});
+            }
+            catch(e){
+                assert(e);
+                return;
+            }
+            assert(false, "Should not be able to see ith owned ticket in a wrong lottery");
+
+        })
+
+        it("Should not be able to see ith owned ticket in a wrong lottery or out of index", async () => {
+
+            var account_no = 2;
+            var lottery_no = 1;
+            var i = 6;
+            try{
+                const result = await lottery.getIthOwnedTicketNo(i,lottery_no,{from: accounts[account_no]});
+            }
+            catch(e){
+                assert(e);
+                return;
+            }
+            assert(false, "Should not be able to see ith owned ticket with a wrong i");
+
+        })
+        
+        //26 days later from the start: lottery no: 3 reveal phase
+        it("Should not be able to reveal random number in a wrong lottery", async () => {
+            advancement = 86400 * 17;
+            await helper.advanceTimeAndBlock(advancement);
+
+            for(let i = 0; i< counter; i++) {   //half of them will reveal correct random numbers
+                const account = accounts[i];
+                for(let j = 0; j< 3; j++) {
+                    const rnd_number = randomNumbers[i*3 + j];
+                    try{
+                        await lottery.revealRndNumber(counter + i*3 + j, rnd_number, {from: account});
+                    }
+                    catch(e){
+                        assert(e);
+                        return;
+                    }
+                    assert(false, "Should not be able to reveal random number in a wrong lottery");
+                }
+            }
+        })
+        it("Should not be able to buy ticket in the reveal phase", async () => {
+            
+            var account_no = 4;
+            const account = accounts[account_no];
+
+            try{
+                const rnd_number = web3.utils.randomHex(32);
+                const hashrndnumber = web3.utils.soliditySha3(rnd_number);
+                await lottery.buyTicket(hashrndnumber, {from: account});
+            }
+            catch(e){
+                assert(e);
+                return;
+            }
+            assert(false, "Should not be able to buy ticket in the reveal phase");
+        })
+
+        it("Should be able to collect ticket refund after weeks", async () => {
+            for(let i = 0; i< counter; i++) {   
+                const account = accounts[i];
+                const balance1 = await lottery.balances.call(account);
+                for(let j = 0; j< 3; j++) {
+                    await lottery.collectTicketRefund(counter + i*3 + j);
+                }
+                const balance2 = await lottery.balances.call(account);
+                assert(balance1.toNumber() == balance2.toNumber() - 15, "Refund was not correctly collected");
+            }
+        })
     
 });
