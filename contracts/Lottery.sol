@@ -44,6 +44,9 @@ contract Lottery {
     // Logs total lottery money
     event lotMoney(uint amnt);
 
+    //logs given number?
+    uint[] public loggedNumbers;
+    uint[] public loggedNumbers2;
     /**
     * @dev Checks if the lottery, which the ticket with given ticket number has been bought, has ended
     */
@@ -251,11 +254,13 @@ contract Lottery {
             xor ^= randomNumbers[lotteryNo][i];
         }
         uint index = xor % n;
+       
         winningTickets[lotteryNo].push(ticketsFromRandoms[lotteryNo][randomNumbers[lotteryNo][index]]);
         uint loopCount = nofWinners < n ? nofWinners: n;
         for (uint i = 0; i < loopCount - 1; i++) { // check if ending condition is true
-            (randomNumbers[lotteryNo][index], randomNumbers[lotteryNo][n - 1]) =
-                (randomNumbers[lotteryNo][n - 1], randomNumbers[lotteryNo][index]);
+            
+            (randomNumbers[lotteryNo][index], randomNumbers[lotteryNo][n - 1 - i]) =
+                (randomNumbers[lotteryNo][n - 1 - i], randomNumbers[lotteryNo][index]);
             index = randomNumbers[lotteryNo][n - 1 - i] % (n - 1 - i);   //çok sağlam bir kıstas mı acaba
             winningTickets[lotteryNo].push(ticketsFromRandoms[lotteryNo][randomNumbers[lotteryNo][index]]);
         }
@@ -380,4 +385,16 @@ contract Lottery {
         return winningTickets[lotteryNo];   
     }
    
+
+   //debuglamak istediğimiz sayıları bu arraylere atabiliriz
+   function getLoggedNumbers(uint i) public view returns (uint[] memory) {
+       if(i == 0){
+            return loggedNumbers;
+       }
+       else{
+            return loggedNumbers2;   
+       }
+        
+    }
+
 }
