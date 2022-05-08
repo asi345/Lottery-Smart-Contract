@@ -26,4 +26,9 @@ Require stack:....
 https://ethereum.stackexchange.com/questions/67593/as-in-truffle-tests-pass-the-check-by-block-timestamp to rewind time
 https://medium.com/coinmonks/testing-time-dependent-logic-in-ethereum-smart-contracts-1b24845c7f72
 
-
+    //bir array dönerse tüm elemanları big number olarak dönecek dolayısıyla map fonksiyonuyla onlara toNumber uygulayıp elde etmek lazımmış
+    //contract blockunda uygulananlar birbrilerine bağlıdır. ilk testte bir arraye bir şey eklersen ikinci testte o eklediğin elemanı bulabilirsin.
+    //assert(array === [1,2,3]); yanlış
+    //assert.deepEqual(array, [1,2,3]); doğru
+    //fonksiyon tuple dönüyorsa result[0], result[1] şeklinde değerleri alabilirsin
+    //to test that a function reverts, use try catch

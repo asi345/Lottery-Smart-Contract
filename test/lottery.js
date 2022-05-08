@@ -2,34 +2,24 @@
 var Lottery = artifacts.require("Lottery");
 const helper = require('../utils/utils.js');
 
-/*
-contract("Lottery",(accounts) =>{   //bu çalışıyor mu bakmak lazım henüz deploylayamıyoruz bile
-//accounts is given to access accounts in the current network
-//hepsinde lotter initiate etmek yerine mocha frameworkü kurup (belki mochasız da çalışıyodur)
-//const lottery = null;
+
+contract("Lottery",(accounts) =>{
     before(async () => {
         lottery = await Lottery.deployed();
     });
-//before tüm testlerden önce uygulatır
 
     let randomNumbers = [];
     const counter = 5;
 
     it("Should deploy properly", async () =>{
         console.log(lottery.address);
+        console.log(lottery.receipt);
         assert(lottery.address != '');
     });
     it("Should calculate prize correctly", async () =>{
         const result = await lottery.calculatePrize(1,3);
         assert(result == 2);
     });
-    
-    //bir array dönerse tüm elemanları big number olarak dönecek dolayısıyla map fonksiyonuyla onlara toNumber uygulayıp elde etmek lazımmış
-    //contract blockunda uygulananlar birbrilerine bağlıdır. ilk testte bir arraye bir şey eklersen ikinci testte o eklediğin elemanı bulabilirsin.
-    //assert(array === [1,2,3]); yanlış
-    //assert.deepEqual(array, [1,2,3]); doğru
-    //fonksiyon tuple dönüyorsa result[0], result[1] şeklinde değerleri alabilirsin
-    //to test that a function reverts, use try catch
 
     it("Should not be able to collect ticket refund", async() =>{
         try{
@@ -207,7 +197,7 @@ contract("Lottery",(accounts) =>{   //bu çalışıyor mu bakmak lazım henüz d
         assert(results['1'].toNumber() == 0, "Prizes were not correctly returned");
     }); 
 });
-*/
+
 
 contract("Lottery",(accounts) =>{   //bu çalışıyor mu bakmak lazım henüz deploylayamıyoruz bile
     //accounts is given to access accounts in the current network
