@@ -44,13 +44,10 @@ contract Lottery {
     // Logs total lottery money
     event lotMoney(uint amnt);
 
-    //logs given number?
-    uint[] public loggedNumbers;
-    uint[] public loggedNumbers2;
     /**
     * @dev Checks if the lottery, which the ticket with given ticket number has been bought, has ended
     */
-    modifier lotteryFinished (uint ticket_no) {
+    modifier lotteryFinished(uint ticket_no) {
         require(getLotteryNoBySec(block.timestamp) > ticketsFromNo[ticket_no].getLotteryNo(), "Lottery is not finished yet");
         _;
     }
@@ -58,13 +55,13 @@ contract Lottery {
     /**
     * @dev Checks if the ticket with given ticket number has been created
     */
-    modifier ticketExists (uint ticket_no) {
+    modifier ticketExists(uint ticket_no) {
         require(ticket_no < ticketCounter, "Ticket does not exist");
         _;
     }
 
     /**
-    * @dev Checks if the lgiven lottery number is non-negative
+    * @dev Checks if the lgiven lottery number is noun-negative
     */
     modifier lotteryExists(uint lottery_no) {
         require(lottery_no >= 0, "Lottery number can not be negative");
@@ -248,7 +245,7 @@ contract Lottery {
         if (nofWinners == 0) {
             return;
         }
-        uint n = randomNumbers[lotteryNo].length;  //10
+        uint n = randomNumbers[lotteryNo].length;
         uint xor = 0;
         for (uint i = 0; i < n; i++) {
             xor ^= randomNumbers[lotteryNo][i];
@@ -257,11 +254,11 @@ contract Lottery {
        
         winningTickets[lotteryNo].push(ticketsFromRandoms[lotteryNo][randomNumbers[lotteryNo][index]]);
         uint loopCount = nofWinners < n ? nofWinners: n;
-        for (uint i = 0; i < loopCount - 1; i++) { // check if ending condition is true
+        for (uint i = 0; i < loopCount - 1; i++) {
             
             (randomNumbers[lotteryNo][index], randomNumbers[lotteryNo][n - 1 - i]) =
                 (randomNumbers[lotteryNo][n - 1 - i], randomNumbers[lotteryNo][index]);
-            index = randomNumbers[lotteryNo][n - 1 - i] % (n - 1 - i);   //çok sağlam bir kıstas mı acaba
+            index = randomNumbers[lotteryNo][n - 1 - i] % (n - 1 - i);
             winningTickets[lotteryNo].push(ticketsFromRandoms[lotteryNo][randomNumbers[lotteryNo][index]]);
         }
     }
@@ -316,7 +313,6 @@ contract Lottery {
     * - The prize for the ticket must not have been given yet
     */
     function collectTicketPrize(uint ticket_no) public ticketExists(ticket_no) lotteryFinished(ticket_no) {
-
         require(ticketsFromNo[ticket_no].status() != 4, "Ticket prize has already been collected");
         require(ticketsFromNo[ticket_no].status() != 1, "Ticket has been cancelled");
         ensureResults(ticketsFromNo[ticket_no].getLotteryNo());
@@ -370,31 +366,6 @@ contract Lottery {
     */
     function getTotalLotteryMoneyCollected(uint lottery_no) public view lotteryExists(lottery_no) returns (uint amount) {
         return totalSupplies[lottery_no];
-    }
-
-    function getTime() public view returns (uint unixtime) {
-        return block.timestamp;
-    }
-//sonradan sil
-    function getTicketStatus(uint ticket_no) public view returns (uint8 status) {
-        Ticket t = ticketsFromNo[ticket_no];
-        return t.status();
-    }
-
-    function getWinningTickets(uint lotteryNo) public view returns (uint[] memory) {
-        return winningTickets[lotteryNo];   
-    }
-   
-
-   //debuglamak istediğimiz sayıları bu arraylere atabiliriz
-   function getLoggedNumbers(uint i) public view returns (uint[] memory) {
-       if(i == 0){
-            return loggedNumbers;
-       }
-       else{
-            return loggedNumbers2;   
-       }
-        
     }
 
 }
